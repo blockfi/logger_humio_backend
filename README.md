@@ -3,8 +3,7 @@ LoggerHumioBackend
 
 ## About
 
-A backend for the [Elixir Logger](http://elixir-lang.org/docs/v1.0/logger/Logger.html)
-that will send logs to [Humio](https://www.humio.com/).
+A [Elixir Logger](http://elixir-lang.org/docs/v1.0/logger/Logger.html) backend for [Humio](https://www.humio.com/).
 
 ## Supported options
 
@@ -37,7 +36,7 @@ To use it in your Mix projects, first add it as a dependency:
 
 ```elixir
 def deps do
-  [{:logger_humio_backend, git: "https://github.com/akasprzok/logger_humio_backend/", tag: "v0.0.6"}]
+  [{:logger_humio_backend, "~> 0.0.1"}]
 end
 ```
 Then run mix deps.get to install it.
