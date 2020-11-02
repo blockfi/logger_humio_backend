@@ -1,10 +1,12 @@
 defmodule LoggerHumioBackend.Mixfile do
   use Mix.Project
 
+  @version "0.0.1"
+
   def project do
     [
       app: :logger_humio_backend,
-      version: "0.0.1",
+      version: @version,
       elixir: "~> 1.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       test_coverage: [tool: ExCoveralls],
@@ -19,7 +21,7 @@ defmodule LoggerHumioBackend.Mixfile do
       description: description(),
       package: package(),
       deps: deps(),
-      source_url: "https://github.com/blockfi/logger_humio_backend"
+      docs: docs()
     ]
   end
 
@@ -55,6 +57,19 @@ defmodule LoggerHumioBackend.Mixfile do
       maintainers: ["Andreas Kasprzok"],
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/blockfi/logger_humio_backend"}
+    ]
+  end
+
+  defp docs() do
+    [
+      main: "readme",
+      name: "Logger Humio Backend",
+      source_ref: "v#{@version}",
+      canonical: "https://hexdocs.pm/logger_humio_backend",
+      source_url: "https://github.com/blockfi/logger_humio_backend",
+      extras: [
+        "README.md"
+      ]
     ]
   end
 end
