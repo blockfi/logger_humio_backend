@@ -54,8 +54,7 @@ defmodule LoggerHumioBackend.Mixfile do
       files: ["config", "lib", "mix.exs", "README*", "LICENSE*", ".formatter.exs"],
       maintainers: ["Andreas Kasprzok"],
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/blockfi/logger_humio_backend"},
-      organization: "blockfi"
+      links: %{"GitHub" => "https://github.com/blockfi/logger_humio_backend"}
     ]
   end
 end
