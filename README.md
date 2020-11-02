@@ -19,7 +19,7 @@ be merged with the metadata sent in every log message.  [default: `[]`]
 * **client**: `Logger.Humio.Backend.Client`.  Client used to send messages to Humio.  [default: `Logger.Humio.Backend.Client.Tesla`]
 * **ingest_api**: `Logger.Humio.Backend.IngestApi`.  Humio API endpoint to which to send the logs.  [default: `Logger.Humio.Backend.IngestApi.Unstructured`]
 * **max_batch_size**: `pos_integer`. Maximum number of logs that the library will batch before sending them to Humio.  [default: `20`]
-* **flush_interval_ms**: `pos_integer`.  Maximum number of milliseconds that ellapses between flushes to Humio. [default: `10_000`]
+* **flush_interval_ms**: `pos_integer`.  Maximum number of milliseconds that ellapses between flushes to Humio. [default: `2_000`]
 * **debug_io_device**: `PID`, `:stdio`, or `:stderr`. The IO device to which error messages are sent if sending logs to Humio fails for any reason. [default: `::stdio`]
 
 ### Ingest API-specifc

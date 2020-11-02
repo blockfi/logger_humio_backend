@@ -13,7 +13,7 @@ defmodule Logger.Backend.Humio do
   @default_level :debug
   @default_metadata []
   @default_max_batch_size 20
-  @default_flush_interval_ms 10_000
+  @default_flush_interval_ms 2_000
   @default_debug_io_device :stdio
 
   @type log_event :: %{
