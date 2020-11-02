@@ -4,7 +4,7 @@ defmodule LoggerHumioBackend.Mixfile do
   def project do
     [
       app: :logger_humio_backend,
-      version: "0.0.6",
+      version: "0.0.1",
       elixir: "~> 1.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       test_coverage: [tool: ExCoveralls],
@@ -18,7 +18,8 @@ defmodule LoggerHumioBackend.Mixfile do
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
-      deps: deps()
+      deps: deps(),
+      source_url: "https://github.com/blockfi/logger_humio_backend"
     ]
   end
 
@@ -33,6 +34,7 @@ defmodule LoggerHumioBackend.Mixfile do
 
   defp deps do
     [
+      {:ex_doc, "~> 0.22", only: :dev, runtime: false},
       {:tesla, "~> 1.3.0"},
       {:jason, "~> 1.1"},
       {:credo, "~> 1.5.0-rc.2", only: [:dev, :test], runtime: false},
@@ -43,16 +45,17 @@ defmodule LoggerHumioBackend.Mixfile do
 
   defp description do
     """
-    A Logger backend to support the Humio (humio.com) TCP input log mechanism
+    A Logger backend to support the Humio (humio.com) ingest APIs.
     """
   end
 
   defp package do
     [
-      files: ["config", "lib", "mix.exs", "README*", "LICENSE*"],
+      files: ["config", "lib", "mix.exs", "README*", "LICENSE*", ".formatter.exs"],
       maintainers: ["Andreas Kasprzok"],
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/akasprzok/logger_humio_backend"}
+      links: %{"GitHub" => "https://github.com/blockfi/logger_humio_backend"},
+      organization: "blockfi"
     ]
   end
 end
