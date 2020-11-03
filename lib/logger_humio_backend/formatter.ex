@@ -120,6 +120,11 @@ defmodule Logger.Backend.Humio.Formatter do
     |> Enum.reverse()
   end
 
+  def take_metadata(metadata, {:except, keys}) when is_list(keys) do
+    metadata
+    |> Keyword.drop(keys)
+  end
+
   defp output(:message, _, msg, _, _, _), do: msg
   defp output(:date, _, _, {date, _time}, _, _), do: format_date(date)
   defp output(:time, _, _, {_date, time}, _, _), do: format_time(time)

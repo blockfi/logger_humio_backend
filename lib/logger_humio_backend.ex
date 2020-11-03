@@ -32,11 +32,12 @@ defmodule Logger.Backend.Humio do
             client: Client,
             level: Logger.level(),
             format: any(),
-            metadata: keyword() | :all,
+            metadata: keyword() | :all | {:except, keyword()},
             max_batch_size: pos_integer(),
             flush_interval_ms: pos_integer(),
             debug_io_device: atom() | pid(),
-            fields: map()
+            fields: map(),
+            tags: map()
           },
           flush_timer: reference()
         }

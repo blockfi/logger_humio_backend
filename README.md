@@ -8,19 +8,18 @@ A [Elixir Logger](http://elixir-lang.org/docs/v1.0/logger/Logger.html) backend f
 ## Supported options
 
 ### Required
-* **host**: `String.t`. The hostname of the Humio ingest API endpoint.
-* **token**: `String.t`. The unique Humio ingest token for the log destination.
+* **host**: `String.t()`. The hostname of the Humio ingest API endpoint.
+* **token**: `String.t()`. The unique Humio ingest token for the log destination.
 
 ### Optional
-* **format**: `String.t`. The logging format of the message. [default: `$datetime $hostname[$pid]: [$level] $message $metadata`].
-* **level**: `atom`. Minimum level for this backend. [default: `:debug`]
-* **metadata**: `Keyword.t`. Extra fields to be added when sending the logs. These will
-be merged with the metadata sent in every log message.  [default: `[]`]
+* **format**: `String.t()`. The logging format of the message. [default: `$datetime $hostname[$pid]: [$level] $message $metadata`].
+* **level**: `atom()`. Minimum level for this backend. [default: `:debug`]
+* **metadata**: `keyword() | :all | {:except, keyword()}`. Specifies the metadata to be sent to Humio. If a keyword list, sends all the metadata with keys in the list. `:all` sends all metadata. The tuple of `:except` and a keyword list specifies that all metadata except for the keys in the list should be sent. [default: `[]`]
 * **client**: `Logger.Humio.Backend.Client`.  Client used to send messages to Humio.  [default: `Logger.Humio.Backend.Client.Tesla`]
 * **ingest_api**: `Logger.Humio.Backend.IngestApi`.  Humio API endpoint to which to send the logs.  [default: `Logger.Humio.Backend.IngestApi.Unstructured`]
-* **max_batch_size**: `pos_integer`. Maximum number of logs that the library will batch before sending them to Humio.  [default: `20`]
-* **flush_interval_ms**: `pos_integer`.  Maximum number of milliseconds that ellapses between flushes to Humio. [default: `2_000`]
-* **debug_io_device**: `PID`, `:stdio`, or `:stderr`. The IO device to which error messages are sent if sending logs to Humio fails for any reason. [default: `::stdio`]
+* **max_batch_size**: `pos_integer()`. Maximum number of logs that the library will batch before sending them to Humio.  [default: `20`]
+* **flush_interval_ms**: `pos_integer()`.  Maximum number of milliseconds that ellapses between flushes to Humio. [default: `2_000`]
+* **debug_io_device**: `pid()`, `:stdio`, or `:stderr`. The IO device to which error messages are sent if sending logs to Humio fails for any reason. [default: `:stdio`]
 
 ### Ingest API-specifc
 
