@@ -17,20 +17,6 @@ defmodule Logger.Backend.Humio.IngestApi do
     ]
   end
 
-  def take_metadata(metadata, :all) do
-    metadata
-  end
-
-  def take_metadata(metadata, keys) when is_list(keys) do
-    Enum.reduce(keys, [], fn key, acc ->
-      case Keyword.fetch(metadata, key) do
-        {:ok, val} -> [{key, val} | acc]
-        :error -> acc
-      end
-    end)
-    |> Enum.reverse()
-  end
-
   def format_message(
         %{message: msg, level: level, timestamp: ts, metadata: md},
         format,

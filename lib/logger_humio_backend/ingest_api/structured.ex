@@ -4,7 +4,7 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
     [Humio Documentation]: https://docs.humio.com/api/ingest/#structured-data
   """
   @behaviour Logger.Backend.Humio.IngestApi
-  alias Logger.Backend.Humio.IngestApi
+  alias Logger.Backend.Humio.{Formatter, IngestApi}
 
   require IEx
 
@@ -57,7 +57,7 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
        ) do
     # omit metadata for raw string, we add metadata as attributes instead
     raw_string = IngestApi.format_message(log_event, format, [])
-    attributes = metadata |> IngestApi.take_metadata(metadata_keys) |> metadata_to_map()
+    attributes = metadata |> Formatter.take_metadata(metadata_keys) |> metadata_to_map()
 
     %{
       "rawstring" => raw_string,

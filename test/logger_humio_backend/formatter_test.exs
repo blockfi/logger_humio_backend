@@ -2,7 +2,7 @@ defmodule Logger.Backend.Humio.FormatterTest do
   use ExUnit.Case, async: false
   require Logger
 
-  alias Logger.Backend.Humio.{IngestApi, Client, Formatter}
+  alias Logger.Backend.Humio.{Client, Formatter, IngestApi}
 
   @backend {Logger.Backend.Humio, :test}
   Logger.add_backend(@backend)
@@ -42,6 +42,12 @@ defmodule Logger.Backend.Humio.FormatterTest do
     # valid iso8601 timestamp at beginning
     assert {:ok, _, _} =
              decoded_message |> String.split() |> Enum.at(0) |> DateTime.from_iso8601()
+  end
+
+  test "take metadata except" do
+    metadata = [a: 1, b: 2]
+    keys = [:b]
+    assert [a: 1] == Formatter.take_metadata(metadata, {:except, keys})
   end
 
   defp config(opts) do
