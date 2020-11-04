@@ -3,6 +3,9 @@ defmodule Logger.Backend.Humio.Test do
   Smoke tests for the backend.
   """
   use ExUnit.Case, async: false
+
+  import Mox
+
   alias Logger.Backend.Humio.IngestApi
 
   require Logger
@@ -15,15 +18,14 @@ defmodule Logger.Backend.Humio.Test do
   ### Setup Functions
 
   defp smoke_test_config(_context) do
+    set_mox_global()
     config(
-      ingest_api: IngestApi.Test,
+      ingest_api: IngestApi.Mock,
       host: "humio.url",
       format: "[$level] $message\n",
       token: "humio-token",
       max_batch_size: 1
     )
-
-    IngestApi.Test.start_link(%{pid: self(), result: @happy_result})
     :ok
   end
 
@@ -74,9 +76,17 @@ defmodule Logger.Backend.Humio.Test do
     end
 
     test "does log when level is above or equal minimum Logger level" do
+      parent = self()
+
+      expect(IngestApi.Mock, :transmit, fn state ->
+        send(parent, {:transmit, state})
+        @happy_result
+      end)
+
       config(level: :info)
       Logger.warn("you will log me")
       assert_receive {:transmit, %{}}
+      verify!()
     end
 
     test "can configure format" do

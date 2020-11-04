@@ -236,7 +236,7 @@ defmodule Logger.Backend.Humio do
         iso8601_format_fun: iso8601_format_fun,
         fields: fields,
         tags: tags
-      },
+      } |> IO.inspect(),
       log_events: [],
       flush_timer: nil
     }

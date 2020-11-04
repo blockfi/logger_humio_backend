@@ -41,7 +41,8 @@ defmodule LoggerHumioBackend.Mixfile do
       {:jason, "~> 1.1"},
       {:credo, "~> 1.5.0-rc.2", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
-      {:timex, "~> 3.5"}
+      {:timex, "~> 3.5"},
+      {:mox, "~> 1.0", only: :test}
     ]
   end
 
