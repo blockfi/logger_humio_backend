@@ -163,7 +163,8 @@ defmodule Logger.Backend.Humio.Test do
       # we multiply by 0.7 to ensure we're under the threshold introduced by the 20% jitter.
       refute_receive({^ref, %{}}, round(flush_interval_ms * 0.7))
 
-      # we multipley by 0.5 so that we assert the :transmit is received between 0.7 to 1.3 the flush interval, which accounts for the 20% jitter.
+      # we multipley by 0.5 so that we assert the :transmit is received between 0.7 to 1.3 the flush interval,
+      # which accounts for the 20% jitter.
       assert_receive(
         {^ref, %{log_events: [%{message: "message"}]}},
         round(flush_interval_ms * 0.6)
@@ -325,7 +326,8 @@ defmodule Logger.Backend.Humio.Test do
       Logger.warn(message)
       assert_receive({^ref, %{}}, round(flush_interval_ms * 2))
 
-      # required since unhappy result needs to be returned to backend from ingest API, which triggers the output to the debug device.
+      # required since unhappy result needs to be returned to backend from ingest API
+      # which triggers the output to the debug device.
       # May be improved in future by substituting a mock IO device for StringIO.
       :timer.sleep(500)
       {:ok, {_initial_empty_string, error_output}} = StringIO.close(string_io)
@@ -364,7 +366,8 @@ defmodule Logger.Backend.Humio.Test do
       Logger.warn(message)
       assert_receive({^ref, %{}}, round(flush_interval_ms * 2))
 
-      # required since unhappy result needs to be returned to backend from ingest API, which triggers the output to the debug device.
+      # required since unhappy result needs to be returned to backend from ingest API,
+      # which triggers the output to the debug device.
       # May be improved in future by substituting a mock IO device for StringIO.
       :timer.sleep(500)
       {:ok, {_initial_empty_string, error_output}} = StringIO.close(string_io)

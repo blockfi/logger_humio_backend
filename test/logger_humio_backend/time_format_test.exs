@@ -1,7 +1,7 @@
 defmodule Logger.Backend.Humio.TimeFormatTest do
   use ExUnit.Case, async: false
 
-  alias Logger.Backend.Humio.{TimeFormat, LogHelpers}
+  alias Logger.Backend.Humio.{LogHelpers, TimeFormat}
 
   test "format timestamp utc" do
     fun = TimeFormat.iso8601_format_fun(true)

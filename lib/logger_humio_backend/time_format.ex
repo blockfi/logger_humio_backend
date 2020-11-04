@@ -6,7 +6,7 @@ defmodule Logger.Backend.Humio.TimeFormat do
   use Timex
 
   # if enabled, the logger's timestamp will be in UTC.  Otherwise it will be in local time
-  defp utc_log_enabled?() do
+  defp utc_log_enabled? do
     Application.get_env(:logger, :utc_log, false)
   end
 

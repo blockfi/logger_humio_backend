@@ -4,7 +4,7 @@ defmodule Logger.Backend.Humio do
   """
   @behaviour :gen_event
 
-  alias Logger.Backend.Humio.{IngestApi, Client, Formatter, TimeFormat}
+  alias Logger.Backend.Humio.{Client, Formatter, IngestApi, TimeFormat}
 
   require Logger
 
