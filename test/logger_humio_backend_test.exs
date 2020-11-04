@@ -19,6 +19,14 @@ defmodule Logger.Backend.Humio.Test do
 
   defp smoke_test_config(_context) do
     set_mox_global()
+    parent = self()
+    ref = make_ref()
+
+    expect(IngestApi.Mock, :transmit, fn state ->
+      send(parent, {ref, state})
+      @happy_result
+    end)
+
     config(
       ingest_api: IngestApi.Mock,
       host: "humio.url",
@@ -26,12 +34,22 @@ defmodule Logger.Backend.Humio.Test do
       token: "humio-token",
       max_batch_size: 1
     )
-    :ok
+
+    {:ok, %{ref: ref}}
   end
 
   defp batch_test_config(_context) do
+    set_mox_global()
+    parent = self()
+    ref = make_ref()
+
+    expect(IngestApi.Mock, :transmit, fn state ->
+      send(parent, {ref, state})
+      @happy_result
+    end)
+
     config(
-      ingest_api: Logger.Backend.Humio.IngestApi.Test,
+      ingest_api: IngestApi.Mock,
       host: "humio.url",
       format: "[$level] $message\n",
       token: "humio-token",
@@ -39,16 +57,17 @@ defmodule Logger.Backend.Humio.Test do
       flush_interval_ms: 10_000
     )
 
-    IngestApi.Test.start_link(%{pid: self(), result: @happy_result})
-    :ok
+    {:ok, %{ref: ref}}
   end
 
   defp timeout_test_config(_context) do
     flush_interval_ms = 200
     max_batch_size = 10
 
+    set_mox_global()
+
     config(
-      ingest_api: Logger.Backend.Humio.IngestApi.Test,
+      ingest_api: IngestApi.Mock,
       host: "humio.url",
       format: "$message",
       token: "humio-token",
@@ -56,7 +75,6 @@ defmodule Logger.Backend.Humio.Test do
       flush_interval_ms: flush_interval_ms
     )
 
-    IngestApi.Test.start_link(%{pid: self(), result: @happy_result})
     {:ok, %{flush_interval_ms: flush_interval_ms, max_batch_size: max_batch_size}}
   end
 
@@ -69,50 +87,44 @@ defmodule Logger.Backend.Humio.Test do
       assert Logger.level() == :debug
     end
 
-    test "does not log when level is under minimum Logger level" do
+    test "does not log when level is under minimum Logger level", %{ref: ref} do
       config(level: :info)
       Logger.debug("do not log me")
-      refute_receive {:transmit, %{}}
+      refute_receive {^ref, %{}}
     end
 
-    test "does log when level is above or equal minimum Logger level" do
-      parent = self()
-
-      expect(IngestApi.Mock, :transmit, fn state ->
-        send(parent, {:transmit, state})
-        @happy_result
-      end)
-
+    test "does log when level is above or equal minimum Logger level", %{ref: ref} do
       config(level: :info)
       Logger.warn("you will log me")
-      assert_receive {:transmit, %{}}
+      assert_receive {^ref, %{}}
+    end
+
+    test "can configure format", %{ref: ref} do
+      config(format: "$message ($level)\n")
+      Logger.info("I am formatted")
+      assert_receive {^ref, %{config: %{format: [:message, " (", :level, ")\n"]}}}
       verify!()
     end
 
-    test "can configure format" do
-      config(format: "$message ($level)\n")
-      Logger.info("I am formatted")
-      assert_receive {:transmit, %{config: %{format: [:message, " (", :level, ")\n"]}}}
-    end
-
-    test "can configure metadata" do
+    test "can configure metadata", %{ref: ref} do
       config(format: "$metadata$message\n", metadata: [:user_id, :auth])
 
       Logger.info("hello")
-      assert_receive {:transmit, %{config: %{metadata: [:user_id, :auth]}}}
+      assert_receive {^ref, %{config: %{metadata: [:user_id, :auth]}}}
+      verify!()
     end
   end
 
   describe "batch tests" do
     setup [:batch_test_config]
 
-    test "send message batch" do
+    test "send message batch", %{ref: ref} do
       Logger.info("message1")
       Logger.info("message2")
-      refute_receive {:transmit, %{}}
+      refute_receive {^ref, %{}}
       Logger.info("message3")
 
-      assert_receive {:transmit,
+      assert_receive {^ref,
                       %{
                         log_events: [
                           %{message: "message1"},
@@ -122,14 +134,16 @@ defmodule Logger.Backend.Humio.Test do
                       }}
 
       Logger.info("message4")
-      refute_receive {:transmit, %{}}
+      refute_receive {^ref, %{}}
+      verify!()
     end
 
-    test "flush" do
+    test "flush", %{ref: ref} do
       Logger.info("message1")
-      refute_receive {:transmit, %{}}
+      refute_receive {^ref, %{}}
       Logger.flush()
-      assert_receive {:transmit, %{log_events: [%{message: "message1"}]}}
+      assert_receive {^ref, %{log_events: [%{message: "message1"}]}}
+      verify!()
     end
   end
 
@@ -137,27 +151,45 @@ defmodule Logger.Backend.Humio.Test do
     setup [:timeout_test_config]
 
     test "no message received before timeout", %{flush_interval_ms: flush_interval_ms} do
+      parent = self()
+      ref = make_ref()
+
+      expect(IngestApi.Mock, :transmit, fn state ->
+        send(parent, {ref, state})
+        @happy_result
+      end)
+
       Logger.info("message")
       # we multiply by 0.7 to ensure we're under the threshold introduced by the 20% jitter.
-      refute_receive({:transmit, %{}}, round(flush_interval_ms * 0.7))
+      refute_receive({^ref, %{}}, round(flush_interval_ms * 0.7))
 
       # we multipley by 0.5 so that we assert the :transmit is received between 0.7 to 1.3 the flush interval, which accounts for the 20% jitter.
       assert_receive(
-        {:transmit, %{log_events: [%{message: "message"}]}},
+        {^ref, %{log_events: [%{message: "message"}]}},
         round(flush_interval_ms * 0.6)
       )
+
+      verify!()
     end
 
     test "receive batched messages via timeout", %{
       flush_interval_ms: flush_interval_ms,
       max_batch_size: max_batch_size
     } do
+      parent = self()
+      ref = make_ref()
+
+      expect(IngestApi.Mock, :transmit, fn state ->
+        send(parent, {ref, state})
+        @happy_result
+      end)
+
       for n <- 1..(max_batch_size - 2) do
         Logger.info("message" <> Integer.to_string(n))
       end
 
       assert_receive(
-        {:transmit,
+        {^ref,
          %{
            log_events: [
              %{message: "message1"},
@@ -172,19 +204,38 @@ defmodule Logger.Backend.Humio.Test do
          }},
         round(flush_interval_ms * 1.2)
       )
+
+      verify!()
     end
 
     test "no timer set/nothing sent to ingest API while log event queue is empty", %{
       flush_interval_ms: flush_interval_ms
     } do
-      refute_receive({:transmit, %{}}, round(flush_interval_ms * 1.5))
+      parent = self()
+      ref = make_ref()
+
+      expect(IngestApi.Mock, :transmit, 0, fn state ->
+        send(parent, {ref, state})
+        @happy_result
+      end)
+
+      refute_receive({^ref, %{}}, round(flush_interval_ms * 1.5))
+      verify!()
     end
 
     test "timer is reset after timeout", %{flush_interval_ms: flush_interval_ms} do
+      parent = self()
+      ref = make_ref()
+
+      expect(IngestApi.Mock, :transmit, 2, fn state ->
+        send(parent, {ref, state})
+        @happy_result
+      end)
+
       Logger.info("message1")
 
       assert_receive(
-        {:transmit, %{log_events: [%{message: "message1"}]}},
+        {^ref, %{log_events: [%{message: "message1"}]}},
         round(flush_interval_ms * 1.2)
       )
 
@@ -192,22 +243,32 @@ defmodule Logger.Backend.Humio.Test do
       Logger.info("message3")
 
       assert_receive(
-        {:transmit, %{log_events: [%{message: "message2"}, %{message: "message3"}]}},
+        {^ref, %{log_events: [%{message: "message2"}, %{message: "message3"}]}},
         round(flush_interval_ms * 1.2)
       )
+
+      verify!()
     end
 
     test "timer is reset by flush due to max batch size", %{
       flush_interval_ms: flush_interval_ms,
       max_batch_size: max_batch_size
     } do
+      parent = self()
+      ref = make_ref()
+
+      expect(IngestApi.Mock, :transmit, 2, fn state ->
+        send(parent, {ref, state})
+        @happy_result
+      end)
+
       for n <- 1..max_batch_size do
         Logger.info("message" <> Integer.to_string(n))
       end
 
       # received before flush interval reached, since max_batch_size reached
       assert_receive(
-        {:transmit,
+        {^ref,
          %{
            log_events: [
              %{message: "message1"},
@@ -228,9 +289,11 @@ defmodule Logger.Backend.Humio.Test do
       Logger.info("timer is reset")
 
       assert_receive(
-        {:transmit, %{log_events: [%{message: "timer is reset"}]}},
+        {^ref, %{log_events: [%{message: "timer is reset"}]}},
         round(flush_interval_ms * 1.2)
       )
+
+      verify!()
     end
   end
 
@@ -239,20 +302,28 @@ defmodule Logger.Backend.Humio.Test do
       {:ok, string_io} = StringIO.open("")
       flush_interval_ms = 100
 
+      set_mox_global()
+      parent = self()
+      ref = make_ref()
+      error_message = "oh no spaghettio"
+      unhappy_result = {:ok, %{status: 500, body: error_message}}
+
+      expect(IngestApi.Mock, :transmit, fn state ->
+        send(parent, {ref, state})
+        unhappy_result
+      end)
+
       config(
-        ingest_api: Logger.Backend.Humio.IngestApi.Test,
+        ingest_api: IngestApi.Mock,
         host: "humio.url",
         token: "humio-token",
         flush_interval_ms: flush_interval_ms,
         debug_io_device: string_io
       )
 
-      error_message = "oh no spaghettio"
-      unhappy_result = {:ok, %{status: 500, body: error_message}}
-      IngestApi.Test.start_link(%{pid: self(), result: unhappy_result})
       message = "something important that needs to go to Humio"
       Logger.warn(message)
-      assert_receive({:transmit, %{}}, round(flush_interval_ms * 2))
+      assert_receive({^ref, %{}}, round(flush_interval_ms * 2))
 
       # required since unhappy result needs to be returned to backend from ingest API, which triggers the output to the debug device.
       # May be improved in future by substituting a mock IO device for StringIO.
@@ -263,26 +334,35 @@ defmodule Logger.Backend.Humio.Test do
       assert error_output =~ "Status: 500"
       assert error_output =~ message
       assert error_output =~ error_message
+      verify!()
     end
 
     test "API or Client returns :error causing error log" do
       {:ok, string_io} = StringIO.open("")
       flush_interval_ms = 100
 
+      set_mox_global()
+      parent = self()
+      ref = make_ref()
+      reason = "oh no spaghettio"
+      unhappy_result = {:error, reason}
+
+      expect(IngestApi.Mock, :transmit, fn state ->
+        send(parent, {ref, state})
+        unhappy_result
+      end)
+
       config(
-        ingest_api: Logger.Backend.Humio.IngestApi.Test,
+        ingest_api: IngestApi.Mock,
         host: "humio.url",
         token: "humio-token",
         flush_interval_ms: flush_interval_ms,
         debug_io_device: string_io
       )
 
-      reason = "oh no spaghettio"
-      unhappy_result = {:error, reason}
-      IngestApi.Test.start_link(%{pid: self(), result: unhappy_result})
       message = "something important that needs to go to Humio"
       Logger.warn(message)
-      assert_receive({:transmit, %{}}, round(flush_interval_ms * 2))
+      assert_receive({^ref, %{}}, round(flush_interval_ms * 2))
 
       # required since unhappy result needs to be returned to backend from ingest API, which triggers the output to the debug device.
       # May be improved in future by substituting a mock IO device for StringIO.
@@ -292,6 +372,7 @@ defmodule Logger.Backend.Humio.Test do
       assert error_output =~ "Sending logs to Humio failed"
       assert error_output =~ message
       assert error_output =~ reason
+      verify!()
     end
   end
 
