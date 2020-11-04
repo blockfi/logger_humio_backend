@@ -89,8 +89,8 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                "events" => [
                  %{
                    "attributes" => %{
-                     "integer" => 13,
-                     "float" => 12.3,
+                     "integer" => "13",
+                     "float" => "12.3",
                      "atom" => "gl",
                      "pid" => ^pid_string,
                      "reference" => ^reference_string,

@@ -4,9 +4,7 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
     [Humio Documentation]: https://docs.humio.com/api/ingest/#structured-data
   """
   @behaviour Logger.Backend.Humio.IngestApi
-  alias Logger.Backend.Humio.{Formatter, IngestApi}
-
-  require IEx
+  alias Logger.Backend.Humio.{Formatter, IngestApi, Metadata}
 
   @path "/api/v1/ingest/humio-structured"
   @content_type "application/json"
@@ -69,55 +67,6 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
   defp metadata_to_map(metadata) do
     metadata
     |> Keyword.drop(@omitted_metadata)
-    |> Enum.map(fn {k, v} -> {k, metadata(k, v)} end)
-    |> Enum.into(%{})
-  end
-
-  defp metadata(:time, _), do: nil
-  defp metadata(:gl, _), do: nil
-  defp metadata(:report_cb, _), do: nil
-
-  defp metadata(_, nil), do: nil
-  defp metadata(_, string) when is_binary(string), do: string
-  defp metadata(_, integer) when is_integer(integer), do: integer
-  defp metadata(_, float) when is_float(float), do: float
-  defp metadata(_, pid) when is_pid(pid), do: :erlang.pid_to_list(pid)
-
-  defp metadata(_, atom) when is_atom(atom) do
-    case Atom.to_string(atom) do
-      "Elixir." <> rest -> rest
-      "nil" -> ""
-      binary -> binary
-    end
-  end
-
-  defp metadata(_, ref) when is_reference(ref) do
-    '#Ref' ++ rest = :erlang.ref_to_list(ref)
-    rest
-  end
-
-  defp metadata(:file, file) when is_list(file), do: file
-
-  defp metadata(:domain, [head | tail]) when is_atom(head) do
-    Enum.map_intersperse([head | tail], ?., &Atom.to_string/1)
-  end
-
-  defp metadata(:mfa, {mod, fun, arity})
-       when is_atom(mod) and is_atom(fun) and is_integer(arity) do
-    Exception.format_mfa(mod, fun, arity)
-  end
-
-  defp metadata(:initial_call, {mod, fun, arity})
-       when is_atom(mod) and is_atom(fun) and is_integer(arity) do
-    Exception.format_mfa(mod, fun, arity)
-  end
-
-  defp metadata(_, list) when is_list(list), do: nil
-
-  defp metadata(_, other) do
-    case String.Chars.impl_for(other) do
-      nil -> nil
-      impl -> impl.to_string(other)
-    end
+    |> Metadata.metadata()
   end
 end
