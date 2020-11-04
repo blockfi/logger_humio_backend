@@ -4,7 +4,8 @@ defmodule Logger.Backend.Humio.IngestApi.Unstructured do
   [Humio Documentation]: https://docs.humio.com/api/ingest/#parser
   """
   @behaviour Logger.Backend.Humio.IngestApi
-  alias Logger.Backend.Humio.IngestApi
+
+  alias Logger.Backend.Humio.{IngestApi, Metadata}
 
   @path "/api/v1/ingest/humio-unstructured"
   @content_type "application/json"
@@ -72,6 +73,12 @@ defmodule Logger.Backend.Humio.IngestApi.Unstructured do
 
   defp format_messages(log_events, format, metadata_keys) do
     log_events
-    |> Enum.map(&IngestApi.format_message(&1, format, metadata_keys))
+    |> Enum.map(&format_message(&1, format, metadata_keys))
+  end
+
+  defp format_message(log_event, format, metadata_keys) do
+    message = IngestApi.format_message(log_event, format, metadata_keys)
+
+    message
   end
 end

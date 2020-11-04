@@ -3,6 +3,26 @@ defmodule Logger.Backend.Humio.Metadata do
   Functions for converting metadata to Humio fields.
   """
 
+  def take_metadata(metadata, :all) do
+    metadata
+  end
+
+  def take_metadata(metadata, keys) when is_list(keys) do
+    keys
+    |> Enum.reduce([], fn key, acc ->
+      case Keyword.fetch(metadata, key) do
+        {:ok, val} -> [{key, val} | acc]
+        :error -> acc
+      end
+    end)
+    |> Enum.reverse()
+  end
+
+  def take_metadata(metadata, {:except, keys}) when is_list(keys) do
+    metadata
+    |> Keyword.drop(keys)
+  end
+
   def metadata(metadata) when is_list(metadata) do
     metadata
     |> Enum.map(fn {k, v} -> {k, metadata(k, v)} end)
