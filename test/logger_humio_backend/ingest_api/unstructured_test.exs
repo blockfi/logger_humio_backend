@@ -27,6 +27,7 @@ defmodule Logger.Backend.Humio.IngestApi.UnstructuredTest do
     set_mox_global()
     parent = self()
     ref = make_ref()
+
     expect(Client.Mock, :send, fn request ->
       send(parent, {ref, request})
       @happy_result
@@ -50,6 +51,7 @@ defmodule Logger.Backend.Humio.IngestApi.UnstructuredTest do
     set_mox_global()
     parent = self()
     ref = make_ref()
+
     expect(Client.Mock, :send, fn request ->
       send(parent, {ref, request})
       @happy_result
@@ -81,6 +83,7 @@ defmodule Logger.Backend.Humio.IngestApi.UnstructuredTest do
       assert_receive(
         {^ref, %{body: ^expected_body, base_url: @base_url, path: @path, headers: @headers}}
       )
+
       verify!()
     end
   end

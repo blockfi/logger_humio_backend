@@ -21,6 +21,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
     set_mox_global()
     parent = self()
     ref = make_ref()
+
     expect(Client.Mock, :send, fn request ->
       send(parent, {ref, request})
       @happy_result
@@ -35,6 +36,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
       max_batch_size: 1,
       metadata: :all
     )
+
     {:ok, %{ref: ref}}
   end
 
@@ -51,6 +53,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                ]
              }
            ] = Jason.decode!(body)
+
     verify!()
   end
 
@@ -97,6 +100,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                ]
              }
            ] = Jason.decode!(body)
+
     verify!()
   end
 
@@ -127,6 +131,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                ]
              }
            ] = Jason.decode!(body)
+
     verify!()
   end
 
