@@ -18,12 +18,9 @@ defmodule Logger.Backend.Humio.IngestApi do
   end
 
   def format_message(
-        %{message: msg, level: level, timestamp: ts, metadata: md},
-        format,
-        metadata_keys
-      ) do
+        %{message: msg, level: level, timestamp: ts, metadata: md}, format) do
     format
-    |> Formatter.format(level, msg, ts, md, metadata_keys)
+    |> Formatter.format(level, msg, ts, md)
     |> IO.chardata_to_string()
     |> String.trim()
   end

@@ -32,7 +32,7 @@ defmodule Logger.Backend.Humio.Formatter do
     :pid,
     :application
   ]
-  @default_pattern "$datetime $hostname[$pid]: [$level] $message"
+  @default_pattern "$datetime $hostname[$pid]: [$level]$levelpad $message"
   @replacement "�"
 
   @doc """
@@ -97,42 +97,42 @@ defmodule Logger.Backend.Humio.Formatter do
   defp pad2(int) when int < 10, do: [?0, Integer.to_string(int)]
   defp pad2(int), do: Integer.to_string(int)
 
-  def format(config, level, msg, timestamp, metadata, metadata_keys) do
+  def format(config, level, msg, timestamp, metadata) do
     for config_option <- config do
-      output(config_option, level, msg, timestamp, metadata, metadata_keys)
+      output(config_option, level, msg, timestamp, metadata)
     end
   end
 
-  defp output(:message, _, msg, _, _, _), do: msg
-  defp output(:date, _, _, {date, _time}, _, _), do: format_date(date)
-  defp output(:time, _, _, {_date, time}, _, _), do: format_time(time)
-  defp output(:level, level, _, _, _, _), do: Atom.to_string(level)
-  defp output(:node, _, _, _, _, _), do: Atom.to_string(node())
+  defp output(:message, _, msg, _, _), do: msg
+  defp output(:date, _, _, {date, _time}, _), do: format_date(date)
+  defp output(:time, _, _, {_date, time}, _), do: format_time(time)
+  defp output(:level, level, _, _, _), do: Atom.to_string(level)
+  defp output(:node, _, _, _, _), do: Atom.to_string(node())
 
-  defp output(:levelpad, level, _, _, _, _), do: levelpad(level)
+  defp output(:levelpad, level, _, _, _), do: levelpad(level)
 
-  defp output(:datetime, _, _, datetime, metadata, _),
+  defp output(:datetime, _, _, datetime, metadata),
     do: Keyword.fetch!(metadata, :iso8601_format_fun).(datetime)
 
-  defp output(:hostname, _, _, _, _, _) do
+  defp output(:hostname, _, _, _, _) do
     {:ok, hostname} = :inet.gethostname()
     hostname
   end
 
-  defp output(:pid, _, _, _, meta, _) do
+  defp output(:pid, _, _, _, meta) do
     meta
     |> Keyword.fetch!(:pid)
     |> :erlang.pid_to_list()
   end
 
-  defp output(:application, _, _, _, meta, _) do
+  defp output(:application, _, _, _, meta) do
     meta
     |> Keyword.fetch!(:pid)
     |> :application.get_application()
     |> application_to_string()
   end
 
-  defp output(other, _, _, _, _, _), do: other
+  defp output(other, _, _, _, _), do: other
 
   defp levelpad(:debug), do: ""
   defp levelpad(:info), do: " "

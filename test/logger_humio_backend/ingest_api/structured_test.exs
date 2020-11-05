@@ -75,10 +75,10 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
     Logger.metadata(float: 12.3)
     Logger.metadata(string: "some string")
     pid = self()
-    pid_string = :erlang.pid_to_list(pid)
+    pid_string = :erlang.pid_to_list(pid) |> to_string()
     Logger.metadata(pid: pid)
     reference = make_ref()
-    '#Ref' ++ reference_string = :erlang.ref_to_list(reference)
+    reference_string = :erlang.ref_to_list(reference) |> to_string()
     Logger.metadata(reference: reference)
     Logger.info("message")
 

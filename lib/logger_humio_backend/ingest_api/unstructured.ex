@@ -41,7 +41,7 @@ defmodule Logger.Backend.Humio.IngestApi.Unstructured do
   end
 
   defp format_message(%{metadata: metadata} = log_event, format, metadata_keys) do
-    message = IngestApi.format_message(log_event, format, metadata_keys)
+    message = IngestApi.format_message(log_event, format)
     fields = metadata |> Metadata.metadata_to_map(metadata_keys)
 
     {fields, message}

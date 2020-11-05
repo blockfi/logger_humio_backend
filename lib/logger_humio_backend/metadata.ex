@@ -12,6 +12,7 @@ defmodule Logger.Backend.Humio.Metadata do
     |> take_metadata(keys)
     |> metadata()
     |> Enum.into(%{})
+    |> Iteraptor.to_flatmap()
   end
 
   def take_metadata(metadata, :all) do
@@ -47,7 +48,7 @@ defmodule Logger.Backend.Humio.Metadata do
   defp metadata(_, string) when is_binary(string), do: string
   defp metadata(_, integer) when is_integer(integer), do: Integer.to_string(integer)
   defp metadata(_, float) when is_float(float), do: Float.to_string(float)
-  defp metadata(_, pid) when is_pid(pid), do: :erlang.pid_to_list(pid)
+  defp metadata(_, pid) when is_pid(pid), do: pid |> :erlang.pid_to_list() |> to_string()
 
   defp metadata(_, atom) when is_atom(atom) do
     case Atom.to_string(atom) do
@@ -58,8 +59,7 @@ defmodule Logger.Backend.Humio.Metadata do
   end
 
   defp metadata(_, ref) when is_reference(ref) do
-    '#Ref' ++ rest = :erlang.ref_to_list(ref)
-    rest
+    ref |> :erlang.ref_to_list() |> to_string()
   end
 
   defp metadata(:file, file) when is_list(file), do: file

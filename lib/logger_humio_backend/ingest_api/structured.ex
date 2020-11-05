@@ -53,8 +53,7 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
          format,
          metadata_keys
        ) do
-    # omit metadata for raw string, we add metadata as attributes instead
-    raw_string = IngestApi.format_message(log_event, format, [])
+    raw_string = IngestApi.format_message(log_event, format)
 
     attributes =
       metadata

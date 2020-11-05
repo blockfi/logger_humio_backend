@@ -100,6 +100,32 @@ defmodule Logger.Backend.Humio.IngestApi.UnstructuredTest do
     {:ok, %{ref: ref}}
   end
 
+  defp all_metadata_config(_context) do
+    Logger.add_backend(@backend)
+    set_mox_global()
+    parent = self()
+    ref = make_ref()
+
+    expect(Client.Mock, :send, fn request ->
+      send(parent, {ref, request})
+      @happy_result
+    end)
+
+    config(
+      ingest_api: IngestApi.Unstructured,
+      client: Client.Mock,
+      host: @base_url,
+      format: "$message",
+      token: @token,
+      max_batch_size: 1,
+      fields: %{},
+      tags: %{},
+      metadata: :all
+    )
+
+    {:ok, %{ref: ref}}
+  end
+
   describe "smoke tests" do
     setup [:smoke_test_config]
 
@@ -171,6 +197,18 @@ defmodule Logger.Backend.Humio.IngestApi.UnstructuredTest do
       assert %{"messages" => ["message2"], "fields" => %{"yaks" => "2"}} == second_event
       # the only field is yaks
       assert second_event |> Map.get("fields") |> map_size() == 1
+    end
+  end
+
+  describe "all metadata" do
+    setup [:all_metadata_config]
+
+    # Test currently just asserts that the built in metadata like domain, file, etc.
+    # can be successfully encoded and decoded.
+    test "is parsed as string", %{ref: ref} do
+      Logger.info("message")
+      assert_receive({^ref, %{body: body}})
+      _decoded_body = Jason.decode!(body)
     end
   end
 
