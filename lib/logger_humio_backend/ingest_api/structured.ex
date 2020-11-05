@@ -55,18 +55,16 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
        ) do
     # omit metadata for raw string, we add metadata as attributes instead
     raw_string = IngestApi.format_message(log_event, format, [])
-    attributes = metadata |> Metadata.take_metadata(metadata_keys) |> metadata_to_map()
+
+    attributes =
+      metadata
+      |> Keyword.drop(@omitted_metadata)
+      |> Metadata.metadata_to_map(metadata_keys)
 
     %{
       "rawstring" => raw_string,
       "timestamp" => Keyword.fetch!(metadata, :iso8601_format_fun).(timestamp),
       "attributes" => attributes
     }
-  end
-
-  defp metadata_to_map(metadata) do
-    metadata
-    |> Keyword.drop(@omitted_metadata)
-    |> Metadata.metadata()
   end
 end

@@ -25,8 +25,10 @@ defmodule Logger.Backend.Humio.IngestApi.Unstructured do
       }) do
     {:ok, body} =
       log_events
-      |> format_messages(format, metadata_keys)
-      |> encode(fields, tags)
+      |> Enum.map(&format_message(&1, format, metadata_keys))
+      |> Enum.reduce(Map.new(), &group_by_metadata/2)
+      |> Enum.map(&encode(&1, fields, tags))
+      |> Jason.encode()
 
     headers = IngestApi.generate_headers(token, @content_type)
 
@@ -38,21 +40,29 @@ defmodule Logger.Backend.Humio.IngestApi.Unstructured do
     })
   end
 
-  defp encode(entries, fields, tags) do
+  defp format_message(%{metadata: metadata} = log_event, format, metadata_keys) do
+    message = IngestApi.format_message(log_event, format, metadata_keys)
+    fields = metadata |> Metadata.metadata_to_map(metadata_keys)
+
+    {fields, message}
+  end
+
+  defp group_by_metadata({fields, message}, map) do
+    Map.update(map, fields, [message], fn list -> [message | list] end)
+  end
+
+  defp encode({metadata, messages}, fields, tags) do
+    # metadata can override the value of config fields
+    merged_fields = Map.merge(fields, metadata)
+
     Map.new()
-    |> add_entries(entries)
-    |> add_fields(fields)
+    |> add_messages(messages)
+    |> add_fields(merged_fields)
     |> add_tags(tags)
-    |> to_list()
-    |> Jason.encode()
   end
 
-  defp to_list(map) do
-    [map]
-  end
-
-  defp add_entries(map, entries) do
-    Map.put_new(map, "messages", entries)
+  defp add_messages(map, messages) do
+    Map.put_new(map, "messages", Enum.reverse(messages))
   end
 
   defp add_fields(map, fields) when fields == %{} do
@@ -69,16 +79,5 @@ defmodule Logger.Backend.Humio.IngestApi.Unstructured do
 
   defp add_tags(map, tags) do
     Map.put_new(map, "tags", tags)
-  end
-
-  defp format_messages(log_events, format, metadata_keys) do
-    log_events
-    |> Enum.map(&format_message(&1, format, metadata_keys))
-  end
-
-  defp format_message(log_event, format, metadata_keys) do
-    message = IngestApi.format_message(log_event, format, metadata_keys)
-
-    message
   end
 end

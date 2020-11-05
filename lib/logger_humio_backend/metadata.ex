@@ -3,6 +3,17 @@ defmodule Logger.Backend.Humio.Metadata do
   Functions for converting metadata to Humio fields.
   """
 
+  @doc """
+  Takes the metadata keyword list, removes any unwanted entries, massages values to be serializable, and returns the result as a map that can be encoded for fields (unstructured) or attributes (structured).
+  """
+  @spec metadata_to_map(keyword(), list() | :all | {:except, list()}) :: map()
+  def metadata_to_map(metadata, keys) do
+    metadata
+    |> take_metadata(keys)
+    |> metadata()
+    |> Enum.into(%{})
+  end
+
   def take_metadata(metadata, :all) do
     metadata
   end
@@ -26,7 +37,6 @@ defmodule Logger.Backend.Humio.Metadata do
   def metadata(metadata) when is_list(metadata) do
     metadata
     |> Enum.map(fn {k, v} -> {k, metadata(k, v)} end)
-    |> Enum.into(%{})
   end
 
   defp metadata(:time, _), do: nil

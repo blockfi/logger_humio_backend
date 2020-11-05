@@ -140,7 +140,6 @@ defmodule Logger.Backend.Humio do
     %{state | flush_timer: nil}
   end
 
-  @spec add_to_batch(log_event(), state()) :: {:ok, state()}
   defp add_to_batch(log_event, %{config: %{max_batch_size: max_batch_size}} = state) do
     state =
       state
@@ -221,22 +220,23 @@ defmodule Logger.Backend.Humio do
     tags = Keyword.get(opts, :tags, %{})
 
     %{
-      config: %{
-        token: token,
-        host: host,
-        name: name,
-        ingest_api: ingest_api,
-        client: client,
-        level: level,
-        format: format,
-        metadata: metadata,
-        max_batch_size: max_batch_size,
-        flush_interval_ms: flush_interval_ms,
-        debug_io_device: debug_io_device,
-        iso8601_format_fun: iso8601_format_fun,
-        fields: fields,
-        tags: tags
-      },
+      config:
+        %{
+          token: token,
+          host: host,
+          name: name,
+          ingest_api: ingest_api,
+          client: client,
+          level: level,
+          format: format,
+          metadata: metadata,
+          max_batch_size: max_batch_size,
+          flush_interval_ms: flush_interval_ms,
+          debug_io_device: debug_io_device,
+          iso8601_format_fun: iso8601_format_fun,
+          fields: fields,
+          tags: tags
+        },
       log_events: [],
       flush_timer: nil
     }
