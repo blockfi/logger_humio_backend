@@ -107,9 +107,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
   # Should eventually figure out what to do with them.
   test "Metadata that cannot be encoded is submitted with nil value", %{ref: ref} do
     Logger.metadata(tuple: {"item1", "item2"})
-    Logger.metadata(list: ["item1", "item2"])
     Logger.metadata(some_function: &Enum.map/2)
-    Logger.metadata(map: %{bool: true, integer: 14})
     port = Port.open({:spawn, "cat"}, [:binary])
     Logger.metadata(port: port)
     Logger.info("message")
@@ -122,9 +120,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                  %{
                    "attributes" => %{
                      "tuple" => "nil",
-                     "list" => "nil",
                      "some_function" => "nil",
-                     "map" => "nil",
                      "port" => "nil"
                    }
                  }

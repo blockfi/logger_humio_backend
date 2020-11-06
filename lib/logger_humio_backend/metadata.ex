@@ -12,8 +12,8 @@ defmodule Logger.Backend.Humio.Metadata do
   def metadata_to_map(metadata, keys) do
     metadata
     |> take_metadata(keys)
-    |> metadata()
     |> Iteraptor.to_flatmap()
+    |> metadata()
     |> Enum.map(&nil_to_string/1)
     |> Enum.into(%{})
   end
@@ -38,7 +38,7 @@ defmodule Logger.Backend.Humio.Metadata do
     |> Keyword.drop(keys)
   end
 
-  def metadata(metadata) when is_list(metadata) do
+  def metadata(metadata) when is_map(metadata) do
     metadata
     |> Enum.map(fn {k, v} -> {k, metadata(k, v)} end)
   end
@@ -67,10 +67,6 @@ defmodule Logger.Backend.Humio.Metadata do
 
   defp metadata(:file, file) when is_list(file), do: file
 
-  defp metadata(:domain, [head | tail]) when is_atom(head) do
-    Enum.map_intersperse([head | tail], ?., &Atom.to_string/1)
-  end
-
   defp metadata(:mfa, {mod, fun, arity})
        when is_atom(mod) and is_atom(fun) and is_integer(arity) do
     Exception.format_mfa(mod, fun, arity)
@@ -80,8 +76,6 @@ defmodule Logger.Backend.Humio.Metadata do
        when is_atom(mod) and is_atom(fun) and is_integer(arity) do
     Exception.format_mfa(mod, fun, arity)
   end
-
-  defp metadata(_, list) when is_list(list), do: nil
 
   defp metadata(_, other) do
     case String.Chars.impl_for(other) do

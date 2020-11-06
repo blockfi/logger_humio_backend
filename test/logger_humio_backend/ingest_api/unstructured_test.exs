@@ -126,6 +126,32 @@ defmodule Logger.Backend.Humio.IngestApi.UnstructuredTest do
     {:ok, %{ref: ref}}
   end
 
+  defp map_and_list_config(_context) do
+    Logger.add_backend(@backend)
+    set_mox_global()
+    parent = self()
+    ref = make_ref()
+
+    expect(Client.Mock, :send, fn request ->
+      send(parent, {ref, request})
+      @happy_result
+    end)
+
+    config(
+      ingest_api: IngestApi.Unstructured,
+      client: Client.Mock,
+      host: @base_url,
+      format: "$message",
+      token: @token,
+      max_batch_size: 1,
+      fields: %{},
+      tags: %{},
+      metadata: [:some_list, :some_map]
+    )
+
+    {:ok, %{ref: ref}}
+  end
+
   describe "smoke tests" do
     setup [:smoke_test_config]
 
@@ -208,7 +234,45 @@ defmodule Logger.Backend.Humio.IngestApi.UnstructuredTest do
     test "is parsed as string", %{ref: ref} do
       Logger.info("message")
       assert_receive({^ref, %{body: body}})
-      _decoded_body = Jason.decode!(body)
+
+      [
+        %{
+          "messages" => ["message"],
+          "fields" => %{
+            "domain.0" => "elixir",
+            "file" =>
+              "/home/andreas/workspace/logger_humio_backend/test/logger_humio_backend/ingest_api/unstructured_test.exs",
+            "function" => "test all metadata is parsed as string/1",
+            "gl" => "nil",
+            "mfa" =>
+              "Logger.Backend.Humio.IngestApi.UnstructuredTest.\"test all metadata is parsed as string\"/1",
+            "module" => "Logger.Backend.Humio.IngestApi.UnstructuredTest"
+          }
+        }
+      ] = Jason.decode!(body)
+    end
+  end
+
+  describe "maps and lists" do
+    setup [:map_and_list_config]
+
+    test "are flattened", %{ref: ref} do
+      some_map = %{a: 1, b: 2}
+      some_list = [3, 4]
+      Logger.info("message", some_map: some_map, some_list: some_list)
+      assert_receive({^ref, %{body: body}})
+
+      [
+        %{
+          "messages" => ["message"],
+          "fields" => %{
+            "some_map.a" => "1",
+            "some_map.b" => "2",
+            "some_list.0" => "3",
+            "some_list.1" => "4"
+          }
+        }
+      ] = Jason.decode!(body)
     end
   end
 
