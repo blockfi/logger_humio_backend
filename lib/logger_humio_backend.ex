@@ -79,7 +79,7 @@ defmodule Logger.Backend.Humio do
 
   def handle_event(
         {level, _group_leader, {Logger, msg, ts, md}},
-        %{config: %{level: min_level, iso8601_format_fun: iso8601_format_fun}} = state
+        %{config: %{level: min_level}} = state
       ) do
     if is_nil(min_level) or Logger.compare_levels(level, min_level) != :lt do
       add_to_batch(
@@ -87,7 +87,7 @@ defmodule Logger.Backend.Humio do
           level: level,
           message: msg,
           timestamp: ts,
-          metadata: [{:iso8601_format_fun, iso8601_format_fun} | md]
+          metadata: md
         },
         state
       )
@@ -220,23 +220,22 @@ defmodule Logger.Backend.Humio do
     tags = Keyword.get(opts, :tags, %{})
 
     %{
-      config:
-        %{
-          token: token,
-          host: host,
-          name: name,
-          ingest_api: ingest_api,
-          client: client,
-          level: level,
-          format: format,
-          metadata: metadata,
-          max_batch_size: max_batch_size,
-          flush_interval_ms: flush_interval_ms,
-          debug_io_device: debug_io_device,
-          iso8601_format_fun: iso8601_format_fun,
-          fields: fields,
-          tags: tags
-        },
+      config: %{
+        token: token,
+        host: host,
+        name: name,
+        ingest_api: ingest_api,
+        client: client,
+        level: level,
+        format: format,
+        metadata: metadata,
+        max_batch_size: max_batch_size,
+        flush_interval_ms: flush_interval_ms,
+        debug_io_device: debug_io_device,
+        iso8601_format_fun: iso8601_format_fun,
+        fields: fields,
+        tags: tags
+      },
       log_events: [],
       flush_timer: nil
     }

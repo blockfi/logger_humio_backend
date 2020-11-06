@@ -3,6 +3,8 @@ defmodule Logger.Backend.Humio.Metadata do
   Functions for converting metadata to Humio fields.
   """
 
+  @nil_substitute "nil"
+
   @doc """
   Takes the metadata keyword list, removes any unwanted entries, massages values to be serializable, and returns the result as a map that can be encoded for fields (unstructured) or attributes (structured).
   """
@@ -11,8 +13,9 @@ defmodule Logger.Backend.Humio.Metadata do
     metadata
     |> take_metadata(keys)
     |> metadata()
-    |> Enum.into(%{})
     |> Iteraptor.to_flatmap()
+    |> Enum.map(&nil_to_string/1)
+    |> Enum.into(%{})
   end
 
   def take_metadata(metadata, :all) do
@@ -85,5 +88,13 @@ defmodule Logger.Backend.Humio.Metadata do
       nil -> nil
       impl -> impl.to_string(other)
     end
+  end
+
+  defp nil_to_string({k, v}) when is_nil(v) do
+    {k, @nil_substitute}
+  end
+
+  defp nil_to_string({k, v}) do
+    {k, v}
   end
 end

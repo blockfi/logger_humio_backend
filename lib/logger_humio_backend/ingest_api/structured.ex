@@ -14,18 +14,9 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
   ]
 
   @impl true
-  def transmit(%{
-        log_events: log_events,
-        config: %{
-          host: host,
-          token: token,
-          client: client,
-          format: format,
-          metadata: metadata_keys
-        }
-      }) do
+  def transmit(%{config: %{host: host, token: token, client: client}} = state) do
     headers = IngestApi.generate_headers(token, @content_type)
-    events = to_humio_events(log_events, format, metadata_keys)
+    events = to_humio_events(state)
     {:ok, body} = encode_events(events)
 
     client.send(%{
@@ -44,16 +35,15 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
     ])
   end
 
-  defp to_humio_events(log_events, format, metadata_keys) do
-    log_events |> Enum.map(&to_humio_event(&1, format, metadata_keys))
+  defp to_humio_events(%{log_events: log_events, config: config}) do
+    log_events |> Enum.map(&to_humio_event(&1, config))
   end
 
   defp to_humio_event(
          %{timestamp: timestamp, metadata: metadata} = log_event,
-         format,
-         metadata_keys
+         %{metadata: metadata_keys, iso8601_format_fun: iso8601_format_fun} = config
        ) do
-    raw_string = IngestApi.format_message(log_event, format)
+    raw_string = IngestApi.format_message(log_event, config)
 
     attributes =
       metadata
@@ -62,7 +52,7 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
 
     %{
       "rawstring" => raw_string,
-      "timestamp" => Keyword.fetch!(metadata, :iso8601_format_fun).(timestamp),
+      "timestamp" => iso8601_format_fun.(timestamp),
       "attributes" => attributes
     }
   end

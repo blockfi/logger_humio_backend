@@ -121,11 +121,11 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                "events" => [
                  %{
                    "attributes" => %{
-                     "tuple" => nil,
-                     "list" => nil,
-                     "some_function" => nil,
-                     "map" => nil,
-                     "port" => nil
+                     "tuple" => "nil",
+                     "list" => "nil",
+                     "some_function" => "nil",
+                     "map" => "nil",
+                     "port" => "nil"
                    }
                  }
                ]

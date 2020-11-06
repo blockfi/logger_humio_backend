@@ -97,9 +97,13 @@ defmodule Logger.Backend.Humio.Formatter do
   defp pad2(int) when int < 10, do: [?0, Integer.to_string(int)]
   defp pad2(int), do: Integer.to_string(int)
 
-  def format(config, level, msg, timestamp, metadata) do
+  def format(config, level, msg, timestamp, metadata, iso8601_format_fun) do
     for config_option <- config do
-      output(config_option, level, msg, timestamp, metadata)
+      if config_option == :datetime do
+        iso8601_format_fun.(timestamp)
+      else
+        output(config_option, level, msg, timestamp, metadata)
+      end
     end
   end
 
@@ -110,9 +114,6 @@ defmodule Logger.Backend.Humio.Formatter do
   defp output(:node, _, _, _, _), do: Atom.to_string(node())
 
   defp output(:levelpad, level, _, _, _), do: levelpad(level)
-
-  defp output(:datetime, _, _, datetime, metadata),
-    do: Keyword.fetch!(metadata, :iso8601_format_fun).(datetime)
 
   defp output(:hostname, _, _, _, _) do
     {:ok, hostname} = :inet.gethostname()

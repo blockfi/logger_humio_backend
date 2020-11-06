@@ -13,19 +13,18 @@ defmodule Logger.Backend.Humio.IngestApi.Unstructured do
   @impl true
   def transmit(%{
         log_events: log_events,
-        config: %{
-          host: host,
-          token: token,
-          client: client,
-          format: format,
-          metadata: metadata_keys,
-          fields: fields,
-          tags: tags
-        }
+        config:
+          %{
+            host: host,
+            token: token,
+            client: client,
+            fields: fields,
+            tags: tags
+          } = config
       }) do
     {:ok, body} =
       log_events
-      |> Enum.map(&format_message(&1, format, metadata_keys))
+      |> Enum.map(&format_message(&1, config))
       |> Enum.reduce(Map.new(), &group_by_metadata/2)
       |> Enum.map(&encode(&1, fields, tags))
       |> Jason.encode()
@@ -40,8 +39,8 @@ defmodule Logger.Backend.Humio.IngestApi.Unstructured do
     })
   end
 
-  defp format_message(%{metadata: metadata} = log_event, format, metadata_keys) do
-    message = IngestApi.format_message(log_event, format)
+  defp format_message(%{metadata: metadata} = log_event, %{metadata: metadata_keys} = config) do
+    message = IngestApi.format_message(log_event, config)
     fields = metadata |> Metadata.metadata_to_map(metadata_keys)
 
     {fields, message}
