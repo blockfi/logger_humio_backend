@@ -58,12 +58,6 @@ defmodule Logger.Backend.Humio.FormatterTest do
     verify!()
   end
 
-  test "take metadata except" do
-    metadata = [a: 1, b: 2]
-    keys = [:b]
-    assert [a: 1] == Formatter.take_metadata(metadata, {:except, keys})
-  end
-
   defp config(opts) do
     :ok = Logger.configure_backend(@backend, opts)
   end

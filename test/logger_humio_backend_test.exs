@@ -107,7 +107,7 @@ defmodule Logger.Backend.Humio.Test do
     end
 
     test "can configure metadata", %{ref: ref} do
-      config(format: "$metadata$message\n", metadata: [:user_id, :auth])
+      config(metadata: [:user_id, :auth])
 
       Logger.info("hello")
       assert_receive {^ref, %{config: %{metadata: [:user_id, :auth]}}}

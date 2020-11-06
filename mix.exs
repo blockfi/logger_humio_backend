@@ -36,13 +36,14 @@ defmodule LoggerHumioBackend.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.22", only: :dev, runtime: false},
-      {:tesla, "~> 1.3.0"},
-      {:jason, "~> 1.1"},
       {:credo, "~> 1.5.0-rc.2", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
-      {:timex, "~> 3.5"},
-      {:mox, "~> 1.0", only: :test}
+      {:ex_doc, "~> 0.22", only: :dev, runtime: false},
+      {:iteraptor, "~> 1.12"},
+      {:jason, "~> 1.1"},
+      {:mox, "~> 1.0", only: :test},
+      {:tesla, "~> 1.3.0"},
+      {:timex, "~> 3.5"}
     ]
   end
 
