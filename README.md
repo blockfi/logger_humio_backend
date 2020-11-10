@@ -29,7 +29,7 @@ To use it in your Mix projects, first add it as a dependency:
 
 ```elixir
 def deps do
-  [{:logger_humio_backend, "~> 0.0.1"}]
+  [{:logger_humio_backend, "~> 0.1.0"}]
 end
 ```
 Then run mix deps.get to install it.
@@ -129,4 +129,4 @@ This logging backend implements its own formatter. It supports all the options p
 * `$hostname`, which prints the current hostname retrieved via `:inet.gethostname/0`.
 * `$pid`, which prints the PID of the process from which the log was sent. This works even when `:pid` is excluded from the `metadata` config.
 
-Metadata is sent as `fields` in the `unstructured` ingest API and `attributes` in the `structured` ingest API, and therefore does not need to be included in the message formatter.
+Metadata is sent as `fields` in the `unstructured` ingest API and `attributes` in the `structured` ingest API, and therefore is not included in the formatter.
