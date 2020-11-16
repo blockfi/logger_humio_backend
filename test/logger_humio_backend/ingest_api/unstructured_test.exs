@@ -235,44 +235,42 @@ defmodule Logger.Backend.Humio.IngestApi.UnstructuredTest do
       Logger.info("message")
       assert_receive({^ref, %{body: body}})
 
-      [
-        %{
-          "messages" => ["message"],
-          "fields" => %{
-            "domain.0" => "elixir",
-            "file" =>
-              "/home/andreas/workspace/logger_humio_backend/test/logger_humio_backend/ingest_api/unstructured_test.exs",
-            "function" => "test all metadata is parsed as string/1",
-            "gl" => "nil",
-            "mfa" =>
-              "Logger.Backend.Humio.IngestApi.UnstructuredTest.\"test all metadata is parsed as string\"/1",
-            "module" => "Logger.Backend.Humio.IngestApi.UnstructuredTest"
-          }
-        }
-      ] = Jason.decode!(body)
+      assert [
+               %{
+                 "messages" => ["message"],
+                 "fields" => %{
+                   "domain" => ["elixir"],
+                   "file" =>
+                     "/home/andreas/workspace/logger_humio_backend/test/logger_humio_backend/ingest_api/unstructured_test.exs",
+                   "function" => "test all metadata is parsed as string/1",
+                   "gl" => "nil",
+                   "mfa" =>
+                     "Logger.Backend.Humio.IngestApi.UnstructuredTest.\"test all metadata is parsed as string\"/1",
+                   "module" => "Logger.Backend.Humio.IngestApi.UnstructuredTest"
+                 }
+               }
+             ] = Jason.decode!(body)
     end
   end
 
   describe "maps and lists" do
     setup [:map_and_list_config]
 
-    test "are flattened", %{ref: ref} do
+    test "are only somewhat supported at this point", %{ref: ref} do
       some_map = %{a: 1, b: 2}
-      some_list = [3, 4]
+      some_list = ["a", "b"]
       Logger.info("message", some_map: some_map, some_list: some_list)
       assert_receive({^ref, %{body: body}})
 
-      [
-        %{
-          "messages" => ["message"],
-          "fields" => %{
-            "some_map.a" => "1",
-            "some_map.b" => "2",
-            "some_list.0" => "3",
-            "some_list.1" => "4"
-          }
-        }
-      ] = Jason.decode!(body)
+      assert [
+               %{
+                 "messages" => ["message"],
+                 "fields" => %{
+                   "some_map" => "nil",
+                   "some_list" => "ab"
+                 }
+               }
+             ] = Jason.decode!(body)
     end
   end
 
