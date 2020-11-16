@@ -8,16 +8,25 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
 
   @path "/api/v1/ingest/humio-structured"
   @content_type "application/json"
-  @omitted_metadata [
-    # timestamp is already included in Structured's "timestamp" field
-    :time
-  ]
 
   @impl true
-  def transmit(%{config: %{host: host, token: token, client: client}} = state) do
+  def transmit(%{
+        log_events: log_events,
+        config:
+          %{
+            host: host,
+            token: token,
+            client: client,
+            tags: tags
+          } = config
+      }) do
     headers = IngestApi.generate_headers(token, @content_type)
-    events = to_humio_events(state)
-    {:ok, body} = encode_events(events)
+
+    body =
+      log_events
+      |> Enum.map(&to_event(&1, config))
+      |> to_request(tags)
+      |> Jason.encode!()
 
     client.send(%{
       base_url: host,
@@ -27,33 +36,43 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
     })
   end
 
-  defp encode_events(events) do
-    Jason.encode([
-      %{
-        "events" => events
-      }
-    ])
+  defp to_request(events, tags) when is_list(events) and is_map(tags) do
+    Map.new()
+    |> Map.put_new("events", events)
+    |> Map.put_new("tags", tags)
+    |> List.wrap()
   end
 
-  defp to_humio_events(%{log_events: log_events, config: config}) do
-    log_events |> Enum.map(&to_humio_event(&1, config))
-  end
-
-  defp to_humio_event(
-         %{timestamp: timestamp, metadata: metadata} = log_event,
+  defp to_event(
+         %{metadata: metadata, timestamp: timestamp} = log_event,
          %{metadata: metadata_keys, iso8601_format_fun: iso8601_format_fun} = config
        ) do
-    raw_string = IngestApi.format_message(log_event, config)
+    Map.new()
+    |> rawstring(log_event, config)
+    |> attributes(metadata, metadata_keys)
+    |> timestamp(timestamp, iso8601_format_fun)
+  end
 
-    attributes =
-      metadata
-      |> Keyword.drop(@omitted_metadata)
-      |> Metadata.metadata_to_map(metadata_keys)
+  defp timestamp(map, timestamp, iso8601_format_fun) do
+    formatted_timestamp = iso8601_format_fun.(timestamp)
+    Map.put_new(map, "timestamp", formatted_timestamp)
+  end
 
-    %{
-      "rawstring" => raw_string,
-      "timestamp" => iso8601_format_fun.(timestamp),
-      "attributes" => attributes
-    }
+  defp rawstring(map, log_event, config) do
+    rawstring = IngestApi.format_message(log_event, config)
+    Map.put_new(map, "rawstring", rawstring)
+  end
+
+  defp attributes(map, metadata, metadata_keys) do
+    attributes = metadata |> Metadata.metadata_to_map(metadata_keys)
+    add_attributes(map, attributes)
+  end
+
+  defp add_attributes(map, attributes) when attributes == %{} do
+    map
+  end
+
+  defp add_attributes(map, attributes) when is_map(attributes) do
+    Map.put(map, "attributes", attributes)
   end
 end

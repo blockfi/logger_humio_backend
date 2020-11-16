@@ -40,7 +40,9 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
       format: "$message",
       token: @token,
       max_batch_size: 1,
-      metadata: :all
+      metadata: :all,
+      fields: @fields,
+      tags: @tags
     )
 
     {:ok, %{ref: ref}}
