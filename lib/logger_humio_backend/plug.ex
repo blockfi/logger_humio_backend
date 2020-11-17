@@ -3,8 +3,8 @@ defmodule Logger.Backend.Humio.Plug do
   Automatically logs metadata information about HTTP requests and responses.
   """
   require Logger
-  alias Plug.Conn
   alias Logger.Backend.Humio.Metadata
+  alias Plug.Conn
   @behaviour Plug
 
   def init(opts) do

@@ -72,7 +72,6 @@ config :logger, :humio_log,
   format: "[$level] $message\n",
   level: :debug,
   metadata: [:request_id, :customer_id],
-  client: Logger.Backend.Humio.Client.Tesla,
   max_batch_size: 50,
   flush_interval_ms: 5_000,
   debug_io_device: :stderr,
@@ -83,10 +82,6 @@ config :logger, :humio_log,
     "env" => "dev"
   }
 ```
-
-## Clients
-
-A Client sends logs formatted by an Ingest API to Humio.  Clients are prefixed with `Logger.Backend.Humio.Client`.
 
 ### Tesla
 
@@ -102,10 +97,32 @@ At this point the logger backend will send all accrued log events to Humio, and 
 
 The logger can be flushed manually by calling `Logger.flush()`.  Note this will flush _all_ registered logger backends.
 
+## Metadata
+
+Metadata is sent to Humio as `attributes` using the `Structured` Ingest API. This means any metadata you set will be ingested as `fields` in Humio, and, unlike the `:console` logger, metadata can not be appended in the Formatter. This is much more powerful than the `:console` logger, as it enables the ingestion of nested maps, lists, and generally more complex metadata than just string values.
+
 ## Formatter
 
-This logging backend implements its own formatter. It supports all the options present in Elixir's `Logger.Formatter` except for `$metadata`, plus these additiona options:
+This logging backend implements its own formatter, similar to Elixir's [Logger.Formatter](https://hexdocs.pm/logger/Logger.Formatter.html).
 
-* `$datetime`, which formats the time stamp as an ISO8601 timestamp.
-* `$hostname`, which prints the current hostname retrieved via `:inet.gethostname/0`.
-* `$pid`, which prints the PID of the process from which the log was sent. This works even when `:pid` is excluded from the `metadata` config.
+It allows developers to specify a string that serves as template for log messages, for example:
+
+```
+$hostname[$pid]: [$level]$levelpad $message
+```
+
+Will print error messages as:
+
+```
+localhost[<0.349.0>]: [error] Hello
+```
+
+The valid parameters you can use are: 
+
+* `$application` - the name of the application from which the log was sent.
+* `$hostname` - the hostname retrieved via `:inet.gethostname/0`.
+* `$level` - the log level
+* `$levelpad` - sets to a single space if level is 4 characters long, otherwise set to the empty space. Used to align the message after level.
+* `$message` - the log message
+* `$node` - the node that prints the message
+* `$pid` - the PID of the process from which the log was sent. This works even when `:pid` is excluded from the `metadata` config.

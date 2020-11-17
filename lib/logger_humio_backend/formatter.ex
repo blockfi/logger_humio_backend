@@ -1,30 +1,23 @@
 defmodule Logger.Backend.Humio.Formatter do
-  @moduledoc """
-  Extends the standard Logger.Formatter with support for additional pattersn:
-  * $datetime, which will format the time stamp according to ISO8601.
-  * $hostname
-  * $pid, which takes the pid from the standard metadata as a stand-alone field. Will work even if :pid is not specified in the metadata config.
-  To do so, it expects the metadata keyword list to contain the key `iso8601_format_fun` whose value is a function that accepts the below `time` type as parameter and returns a String type.
-  * $application, which derives the application that submitted the log from the PID.
-  """
+  @moduledoc false
 
   @type time :: {{1970..10_000, 1..12, 1..31}, {0..23, 0..59, 0..59, 0..999}}
   @type pattern ::
-          :level
+          :application
+          | :hostname
+          | :level
           | :levelpad
           | :message
           | :node
-          | :hostname
           | :pid
-          | :application
   @valid_patterns [
-    :message,
-    :level,
-    :node,
-    :levelpad,
+    :application,
     :hostname,
-    :pid,
-    :application
+    :level,
+    :levelpad,
+    :message,
+    :node,
+    :pid
   ]
   @default_pattern "$hostname[$pid]: [$level]$levelpad $message"
   @replacement "�"

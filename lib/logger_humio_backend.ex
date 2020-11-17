@@ -9,7 +9,6 @@ defmodule Logger.Backend.Humio do
   require Logger
 
   # "advertised" options
-  @default_client Client.Tesla
   @default_level :debug
   @default_metadata []
   @default_max_batch_size 20
@@ -17,6 +16,7 @@ defmodule Logger.Backend.Humio do
   @default_debug_io_device :stdio
 
   # used primarily for testing
+  @default_client Client.Tesla
   @default_ingest_api IngestApi.Structured
 
   @type log_event :: %{
