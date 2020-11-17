@@ -82,7 +82,8 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                "function" => "test smokes tests:  Send payload successfully/1",
                "mfa" =>
                  "Logger.Humio.Backend.IngestApi.StructuredTest.\"test smokes tests:  Send payload successfully\"/1",
-               "module" => "Logger.Humio.Backend.IngestApi.StructuredTest"
+               "module" => "Logger.Humio.Backend.IngestApi.StructuredTest",
+               "service" => "cool_service"
              } = attributes
     end
 

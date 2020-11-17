@@ -45,11 +45,11 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
 
   defp to_event(
          %{metadata: metadata, timestamp: timestamp} = log_event,
-         %{metadata: metadata_keys, iso8601_format_fun: iso8601_format_fun} = config
+         %{metadata: metadata_keys, iso8601_format_fun: iso8601_format_fun, fields: fields} = config
        ) do
     Map.new()
     |> rawstring(log_event, config)
-    |> attributes(metadata, metadata_keys)
+    |> attributes(metadata, metadata_keys, fields)
     |> timestamp(timestamp, iso8601_format_fun)
   end
 
@@ -63,8 +63,9 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
     Map.put_new(map, "rawstring", rawstring)
   end
 
-  defp attributes(map, metadata, metadata_keys) do
-    attributes = metadata |> Metadata.metadata_to_map(metadata_keys)
+  defp attributes(map, metadata, metadata_keys, fields) do
+    metadata_map = metadata |> Metadata.metadata_to_map(metadata_keys)
+    attributes = Map.merge(fields, metadata_map)
     add_attributes(map, attributes)
   end
 
