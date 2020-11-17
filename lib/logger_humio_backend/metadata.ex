@@ -12,8 +12,7 @@ defmodule Logger.Backend.Humio.Metadata do
   def metadata_to_map(metadata, keys) do
     metadata
     |> take_metadata(keys)
-    |> Iteraptor.to_flatmap()
-    |> metadata()
+    |> format_metadata()
     |> Enum.map(&nil_to_string/1)
     |> Enum.into(%{})
   end
@@ -38,14 +37,17 @@ defmodule Logger.Backend.Humio.Metadata do
     |> Keyword.drop(keys)
   end
 
-  def metadata(metadata) when is_map(metadata) do
-    metadata
-    |> Enum.map(fn {k, v} -> {k, metadata(k, v)} end)
+  def format_metadata(metadata) do
+    Enum.map(metadata, fn {k, v} -> {k, metadata(k, v)} end)
   end
 
   defp metadata(:time, _), do: nil
   defp metadata(:gl, _), do: nil
   defp metadata(:report_cb, _), do: nil
+
+  defp metadata(:domain, [head | tail]) when is_atom(head) do
+    Enum.map_intersperse([head | tail], ?., &Atom.to_string/1)
+  end
 
   defp metadata(_, nil), do: nil
   defp metadata(_, string) when is_binary(string), do: string

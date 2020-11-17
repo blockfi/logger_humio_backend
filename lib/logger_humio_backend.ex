@@ -8,13 +8,16 @@ defmodule Logger.Backend.Humio do
 
   require Logger
 
-  @default_ingest_api IngestApi.Unstructured
-  @default_client Client.Tesla
+  # "advertised" options
   @default_level :debug
   @default_metadata []
   @default_max_batch_size 20
   @default_flush_interval_ms 2_000
   @default_debug_io_device :stdio
+
+  # used primarily for testing
+  @default_client Client.Tesla
+  @default_ingest_api IngestApi.Structured
 
   @type log_event :: %{
           level: atom(),
