@@ -3,7 +3,7 @@ defmodule Logger.Backend.Humio.FormatterTest do
 
   import Mox
 
-  alias Logger.Backend.Humio.{Client, Formatter, IngestApi}
+  alias Logger.Backend.Humio.{Client}
 
   require Logger
 
@@ -25,11 +25,9 @@ defmodule Logger.Backend.Humio.FormatterTest do
     end)
 
     config(
-      ingest_api: IngestApi.Unstructured,
       client: Client.Mock,
       host: @base_url,
       token: @token,
-      formatter: Formatter,
       # use default format
       format: nil,
       max_batch_size: 1,
@@ -45,7 +43,7 @@ defmodule Logger.Backend.Humio.FormatterTest do
     Logger.info(message)
 
     assert_receive({^ref, %{body: body}}, 500)
-    [%{"messages" => [decoded_message]}] = Jason.decode!(body)
+    assert [%{"events" => [%{"rawstring" => decoded_message}]}] = Jason.decode!(body)
     # no metadata after message, trimmed space
     assert String.ends_with?(decoded_message, message)
     assert decoded_message =~ "[info]"

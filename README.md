@@ -16,7 +16,6 @@ A [Elixir Logger](http://elixir-lang.org/docs/v1.0/logger/Logger.html) backend f
 * **level**: `atom()`. Minimum level for this backend. [default: `:debug`]
 * **metadata**: `list() | :all | {:except, list()}`. Specifies the metadata to be sent to Humio. If a list, sends all the metadata with keys in the list. `:all` sends all metadata. The tuple of `:except` and a list specifies that all metadata except for the keys in the list should be sent. [default: `[]`]
 * **client**: `Logger.Humio.Backend.Client`.  Client used to send messages to Humio.  [default: `Logger.Humio.Backend.Client.Tesla`]
-* **ingest_api**: `Logger.Humio.Backend.IngestApi`.  Humio API endpoint to which to send the logs.  [default: `Logger.Humio.Backend.IngestApi.Unstructured`]
 * **max_batch_size**: `pos_integer()`. Maximum number of logs that the library will batch before sending them to Humio.  [default: `20`]
 * **flush_interval_ms**: `pos_integer()`.  Maximum number of milliseconds that ellapses between flushes to Humio. [default: `2_000`]
 * **debug_io_device**: `pid()`, `:stdio`, or `:stderr`. The IO device to which error messages are sent if sending logs to Humio fails for any reason. [default: `:stdio`]
@@ -74,7 +73,6 @@ config :logger, :humio_log,
   level: :debug,
   metadata: [:request_id, :customer_id],
   client: Logger.Backend.Humio.Client.Tesla,
-  ingest_api: Logger.Backend.Humio.IngestApi.Unstructured,
   max_batch_size: 50,
   flush_interval_ms: 5_000,
   debug_io_device: :stderr,
@@ -85,23 +83,6 @@ config :logger, :humio_log,
     "env" => "dev"
   }
 ```
-
-## Ingest APIs
-
-Ingest APIs are configured using the `ingest_api` config option.  They are prefixed with `Logger.Backend.Humio.IngestApi`.  They format logs according to Humio's ingest APIs and then pass the formatted logs to the `Logger.Backend.Humio.Client` to send to Humio.
-
-### Unstructured
-
-Uses Humio's [unstructured ingest API](https://docs.humio.com/api/ingest/#parser).  It functions very closely to the default console backend.  
-
-`fields` can be added to every request using the `fields` config option. Metadata is also sent as `fields`. If there is a collision between keys for `fields` added via config and those added via metadata, the metadata value is merged and the config value is discarded.
-
-### Structured
-
-Uses Humio's [structured ingest API](https://docs.humio.com/api/ingest/#structured-data). Logs are formatted as `events`.
-
-Metadata is sent as `attributes` key-value pairs. `fields` specified in the config are also added as `attributes`.
-The timestamp is added in the `event`'s `timestamp` field, and can be omitted in the `format` config.
 
 ## Clients
 
@@ -128,5 +109,3 @@ This logging backend implements its own formatter. It supports all the options p
 * `$datetime`, which formats the time stamp as an ISO8601 timestamp.
 * `$hostname`, which prints the current hostname retrieved via `:inet.gethostname/0`.
 * `$pid`, which prints the PID of the process from which the log was sent. This works even when `:pid` is excluded from the `metadata` config.
-
-Metadata is sent as `fields` in the `unstructured` ingest API and `attributes` in the `structured` ingest API, and therefore is not included in the formatter.
