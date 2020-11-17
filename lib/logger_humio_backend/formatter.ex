@@ -10,29 +10,23 @@ defmodule Logger.Backend.Humio.Formatter do
 
   @type time :: {{1970..10_000, 1..12, 1..31}, {0..23, 0..59, 0..59, 0..999}}
   @type pattern ::
-          :date
-          | :level
+          :level
           | :levelpad
           | :message
           | :node
-          | :time
-          | :datetime
           | :hostname
           | :pid
           | :application
   @valid_patterns [
-    :time,
-    :date,
     :message,
     :level,
     :node,
     :levelpad,
-    :datetime,
     :hostname,
     :pid,
     :application
   ]
-  @default_pattern "$datetime $hostname[$pid]: [$level]$levelpad $message"
+  @default_pattern "$hostname[$pid]: [$level]$levelpad $message"
   @replacement "�"
 
   @doc """
@@ -74,42 +68,13 @@ defmodule Logger.Backend.Humio.Formatter do
     raise ArgumentError, "$#{key} is an invalid format pattern"
   end
 
-  @doc """
-  Formats time as chardata.
-  """
-  @spec format_time({0..23, 0..59, 0..59, 0..999}) :: IO.chardata()
-  def format_time({hh, mi, ss, ms}) do
-    [pad2(hh), ?:, pad2(mi), ?:, pad2(ss), ?., pad3(ms)]
-  end
-
-  @doc """
-  Formats date as chardata.
-  """
-  @spec format_date({1970..10_000, 1..12, 1..31}) :: IO.chardata()
-  def format_date({yy, mm, dd}) do
-    [Integer.to_string(yy), ?-, pad2(mm), ?-, pad2(dd)]
-  end
-
-  defp pad3(int) when int < 10, do: [?0, ?0, Integer.to_string(int)]
-  defp pad3(int) when int < 100, do: [?0, Integer.to_string(int)]
-  defp pad3(int), do: Integer.to_string(int)
-
-  defp pad2(int) when int < 10, do: [?0, Integer.to_string(int)]
-  defp pad2(int), do: Integer.to_string(int)
-
-  def format(config, level, msg, timestamp, metadata, iso8601_format_fun) do
+  def format(config, level, msg, timestamp, metadata) do
     for config_option <- config do
-      if config_option == :datetime do
-        iso8601_format_fun.(timestamp)
-      else
-        output(config_option, level, msg, timestamp, metadata)
-      end
+      output(config_option, level, msg, timestamp, metadata)
     end
   end
 
   defp output(:message, _, msg, _, _), do: msg
-  defp output(:date, _, _, {date, _time}, _), do: format_date(date)
-  defp output(:time, _, _, {_date, time}, _), do: format_time(time)
   defp output(:level, level, _, _, _), do: Atom.to_string(level)
   defp output(:node, _, _, _, _), do: Atom.to_string(node())
 

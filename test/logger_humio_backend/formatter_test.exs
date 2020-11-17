@@ -3,7 +3,7 @@ defmodule Logger.Backend.Humio.FormatterTest do
 
   import Mox
 
-  alias Logger.Backend.Humio.{Client}
+  alias Logger.Backend.Humio.Client
 
   require Logger
 
@@ -48,11 +48,6 @@ defmodule Logger.Backend.Humio.FormatterTest do
     assert String.ends_with?(decoded_message, message)
     assert decoded_message =~ "[info]"
     assert decoded_message =~ self() |> :erlang.pid_to_list() |> (&"[#{&1}]").()
-
-    # valid iso8601 timestamp at beginning
-    assert {:ok, _, _} =
-             decoded_message |> String.split() |> Enum.at(0) |> DateTime.from_iso8601()
-
     verify!()
   end
 

@@ -12,7 +12,7 @@ A [Elixir Logger](http://elixir-lang.org/docs/v1.0/logger/Logger.html) backend f
 * **token**: `String.t()`. The unique Humio ingest token for the log destination.
 
 ### Optional
-* **format**: `String.t()`. The logging format of the message. [default: `$datetime $hostname[$pid]: [$level]$levelpad $message`].
+* **format**: `String.t()`. The logging format of the message. [default: `$hostname[$pid]: [$level]$levelpad $message`].
 * **level**: `atom()`. Minimum level for this backend. [default: `:debug`]
 * **metadata**: `list() | :all | {:except, list()}`. Specifies the metadata to be sent to Humio. If a list, sends all the metadata with keys in the list. `:all` sends all metadata. The tuple of `:except` and a list specifies that all metadata except for the keys in the list should be sent. [default: `[]`]
 * **client**: `Logger.Humio.Backend.Client`.  Client used to send messages to Humio.  [default: `Logger.Humio.Backend.Client.Tesla`]
