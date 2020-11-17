@@ -3,7 +3,7 @@ defmodule Logger.Backend.Humio.FormatterTest do
 
   import Mox
 
-  alias Logger.Backend.Humio.Client
+  alias Logger.Backend.Humio.{Client, IngestApi}
 
   require Logger
 
@@ -26,6 +26,7 @@ defmodule Logger.Backend.Humio.FormatterTest do
 
     config(
       client: Client.Mock,
+      ingest_api: IngestApi.Structured,
       host: @base_url,
       token: @token,
       # use default format

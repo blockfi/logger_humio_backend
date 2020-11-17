@@ -93,12 +93,17 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
       Logger.metadata(integer: 13)
       Logger.metadata(float: 12.3)
       Logger.metadata(string: "some string")
+      Logger.metadata(map: %{"map_key" => "map_value"})
+      Logger.metadata(list: ["list_entry_1", "list_entry_2"])
       pid = self()
       pid_string = :erlang.pid_to_list(pid) |> to_string()
       Logger.metadata(pid: pid)
       reference = make_ref()
       reference_string = :erlang.ref_to_list(reference) |> to_string()
       Logger.metadata(reference: reference)
+      port = Port.open({:spawn, "cat"}, [:binary])
+      port_string = port |> :erlang.port_to_list() |> to_string()
+      Logger.metadata(port: port)
       Logger.info("message")
 
       assert_receive({^ref, %{body: body, base_url: @base_url, path: @path, headers: @headers}})
@@ -113,7 +118,10 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                        "atom" => "gl",
                        "pid" => ^pid_string,
                        "reference" => ^reference_string,
-                       "string" => "some string"
+                       "string" => "some string",
+                       "map" => %{"map_key" => "map_value"},
+                       "list" => ["list_entry_1", "list_entry_2"],
+                       "port" => ^port_string
                      }
                    }
                  ]
@@ -125,8 +133,6 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
     test "Metadata that cannot be encoded is submitted with nil value", %{ref: ref} do
       Logger.metadata(tuple: {"item1", "item2"})
       Logger.metadata(some_function: &Enum.map/2)
-      port = Port.open({:spawn, "cat"}, [:binary])
-      Logger.metadata(port: port)
       Logger.info("message")
 
       assert_receive({^ref, %{body: body, base_url: @base_url, path: @path, headers: @headers}})
@@ -137,8 +143,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                    %{
                      "attributes" => %{
                        "tuple" => "nil",
-                       "some_function" => "nil",
-                       "port" => "nil"
+                       "some_function" => "nil"
                      }
                    }
                  ]

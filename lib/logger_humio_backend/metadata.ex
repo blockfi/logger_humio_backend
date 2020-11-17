@@ -38,22 +38,19 @@ defmodule Logger.Backend.Humio.Metadata do
   end
 
   def format_metadata(metadata) do
-    Enum.map(metadata, fn {k, v} -> {k, metadata(k, v)} end)
+    Iteraptor.map(metadata, fn {k, v} -> {k, metadata(k, v)} end)
   end
 
-  defp metadata(:time, _), do: nil
-  defp metadata(:gl, _), do: nil
-  defp metadata(:report_cb, _), do: nil
-
-  defp metadata(:domain, [head | tail]) when is_atom(head) do
-    Enum.map_intersperse([head | tail], ?., &Atom.to_string/1)
-  end
+  defp metadata([:time], _), do: nil
+  defp metadata([:gl], _), do: nil
+  defp metadata([:report_cb], _), do: nil
 
   defp metadata(_, nil), do: nil
   defp metadata(_, string) when is_binary(string), do: string
   defp metadata(_, integer) when is_integer(integer), do: Integer.to_string(integer)
   defp metadata(_, float) when is_float(float), do: Float.to_string(float)
   defp metadata(_, pid) when is_pid(pid), do: pid |> :erlang.pid_to_list() |> to_string()
+  defp metadata(_, map) when is_map(map), do: map
 
   defp metadata(_, atom) when is_atom(atom) do
     case Atom.to_string(atom) do
@@ -63,18 +60,20 @@ defmodule Logger.Backend.Humio.Metadata do
     end
   end
 
+  defp metadata(_, port) when is_port(port), do: port |> :erlang.port_to_list() |> to_string()
+
   defp metadata(_, ref) when is_reference(ref) do
     ref |> :erlang.ref_to_list() |> to_string()
   end
 
-  defp metadata(:file, file) when is_list(file), do: file
+  defp metadata([:file], file) when is_list(file), do: file
 
-  defp metadata(:mfa, {mod, fun, arity})
+  defp metadata([:mfa], {mod, fun, arity})
        when is_atom(mod) and is_atom(fun) and is_integer(arity) do
     Exception.format_mfa(mod, fun, arity)
   end
 
-  defp metadata(:initial_call, {mod, fun, arity})
+  defp metadata([:initial_call], {mod, fun, arity})
        when is_atom(mod) and is_atom(fun) and is_integer(arity) do
     Exception.format_mfa(mod, fun, arity)
   end
