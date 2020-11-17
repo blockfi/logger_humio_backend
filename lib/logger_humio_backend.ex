@@ -207,17 +207,23 @@ defmodule Logger.Backend.Humio do
     host = Keyword.get(opts, :host, "")
     token = token(Keyword.get(opts, :token, ""))
 
-    ingest_api = Keyword.get(opts, :ingest_api, @default_ingest_api)
-    client = Keyword.get(opts, :client, @default_client)
-    level = Keyword.get(opts, :level, @default_level)
-    metadata = Keyword.get(opts, :metadata, @default_metadata)
-    format = opts |> Keyword.get(:format, nil) |> Formatter.compile()
-    max_batch_size = Keyword.get(opts, :max_batch_size, @default_max_batch_size)
-    flush_interval_ms = Keyword.get(opts, :flush_interval_ms, @default_flush_interval_ms)
-    debug_io_device = Keyword.get(opts, :debug_io_device, @default_debug_io_device)
-    iso8601_format_fun = TimeFormat.iso8601_format_fun()
-    fields = Keyword.get(opts, :fields, %{})
-    tags = Keyword.get(opts, :tags, %{})
+    # initialize var here I think
+
+    keyword_list = [
+      ingest_api: Keyword.get(opts, :ingest_api, @default_ingest_api),
+      client: Keyword.get(opts, :client, @default_client),
+      level: Keyword.get(opts, :level, @default_level),
+      metadata: Keyword.get(opts, :metadata, @default_metadata),
+      format: opts |> Keyword.get(:format, nil) |> Formatter.compile(),
+      max_batch_size: Keyword.get(opts, :max_batch_size, @default_max_batch_size),
+      flush_interval_ms: Keyword.get(opts, :flush_interval_ms, @default_flush_interval_ms),
+      debug_io_device: Keyword.get(opts, :debug_io_device, @default_debug_io_device),
+      iso8601_format_fun: TimeFormat.iso8601_format_fun(),
+      fields: Keyword.get(opts, :fields, %{}),
+      tags: Keyword.get(opts, :tags, %{})
+    ]
+
+    # add if statement checking for bool
 
     %{
       config: %{
