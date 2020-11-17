@@ -57,23 +57,33 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
 
       assert_receive({^ref, %{body: body, base_url: @base_url, path: @path, headers: @headers}})
 
+      decoded_body = Jason.decode!(body)
+
       assert [
                %{
+                 "tags" => tags,
                  "events" => [
-                   %{"rawstring" => message}
+                   %{
+                     "rawstring" => ^message,
+                     "timestamp" => timestamp,
+                     "attributes" => attributes
+                   }
                  ]
                }
-             ] = Jason.decode!(body)
-    end
+             ] = decoded_body
 
-    # example: 2003-10-11T22:14:15.003Z
-    test "Configure timestamp according to Syslog/ISO 8601", %{ref: ref} do
-      message = "message"
-      Logger.info(message)
+      assert {:ok, _, _} = DateTime.from_iso8601(timestamp)
+      assert @tags == tags
 
-      assert_receive({^ref, %{body: body, base_url: @base_url, path: @path, headers: @headers}})
-      [%{"events" => [%{"timestamp" => timestamp}]}] = Jason.decode!(body)
-      {:ok, _, _} = DateTime.from_iso8601(timestamp)
+      assert %{
+               "domain" => ["elixir"],
+               "file" =>
+                 "/home/andreas/workspace/logger_humio_backend/test/logger_humio_backend/ingest_api/structured_test.exs",
+               "function" => "test smokes tests:  Send payload successfully/1",
+               "mfa" =>
+                 "Logger.Humio.Backend.IngestApi.StructuredTest.\"test smokes tests:  Send payload successfully\"/1",
+               "module" => "Logger.Humio.Backend.IngestApi.StructuredTest"
+             } = attributes
     end
 
     test "Various Metadata is encoded correctly as attributes", %{ref: ref} do
