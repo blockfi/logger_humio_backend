@@ -42,6 +42,7 @@ defmodule LoggerHumioBackend.Mixfile do
       {:iteraptor, "~> 1.12"},
       {:jason, "~> 1.1"},
       {:mox, "~> 1.0", only: :test},
+      {:plug, "~> 1.2"},
       {:tesla, "~> 1.3.0"},
       {:timex, "~> 3.5"}
     ]

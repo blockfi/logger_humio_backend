@@ -8,13 +8,16 @@ defmodule Logger.Backend.Humio do
 
   require Logger
 
-  @default_ingest_api IngestApi.Unstructured
-  @default_client Client.Tesla
+  # "advertised" options
   @default_level :debug
   @default_metadata []
   @default_max_batch_size 20
   @default_flush_interval_ms 2_000
   @default_debug_io_device :stdio
+
+  # used primarily for testing
+  @default_client Client.Tesla
+  @default_ingest_api IngestApi.Structured
 
   @type log_event :: %{
           level: atom(),
@@ -204,10 +207,13 @@ defmodule Logger.Backend.Humio do
     opts = Keyword.merge(env, opts)
     Application.put_env(:logger, name, opts)
 
+
+    # do these fields need to be logged or not? to be or to not to be
     host = Keyword.get(opts, :host, "")
     token = token(Keyword.get(opts, :token, ""))
 
-    # initialize var here I think
+    # false by default
+    print_config? = Keyword.get(opts, :print_config?, false)
 
     keyword_list = [
       ingest_api: Keyword.get(opts, :ingest_api, @default_ingest_api),
@@ -223,25 +229,12 @@ defmodule Logger.Backend.Humio do
       tags: Keyword.get(opts, :tags, %{})
     ]
 
-    # add if statement checking for bool
+    if print_config? == true do
+      Logger.info("Configuration for Logger Humio Backend", keyword_list)
+    end
 
     %{
-      config: %{
-        token: token,
-        host: host,
-        name: name,
-        ingest_api: ingest_api,
-        client: client,
-        level: level,
-        format: format,
-        metadata: metadata,
-        max_batch_size: max_batch_size,
-        flush_interval_ms: flush_interval_ms,
-        debug_io_device: debug_io_device,
-        iso8601_format_fun: iso8601_format_fun,
-        fields: fields,
-        tags: tags
-      },
+      config: Enum.into(keyword_list, %{}),
       log_events: [],
       flush_timer: nil
     }
