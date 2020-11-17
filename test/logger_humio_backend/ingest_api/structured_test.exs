@@ -104,6 +104,9 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
       port = Port.open({:spawn, "cat"}, [:binary])
       port_string = port |> :erlang.port_to_list() |> to_string()
       Logger.metadata(port: port)
+      function = &Enum.map/2
+      function_string = function |> :erlang.fun_to_list() |> to_string()
+      Logger.metadata(function: function)
       Logger.info("message")
 
       assert_receive({^ref, %{body: body, base_url: @base_url, path: @path, headers: @headers}})
@@ -121,7 +124,8 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                        "string" => "some string",
                        "map" => %{"map_key" => "map_value"},
                        "list" => ["list_entry_1", "list_entry_2"],
-                       "port" => ^port_string
+                       "port" => ^port_string,
+                       "function" => ^function_string
                      }
                    }
                  ]
@@ -132,7 +136,6 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
     # Should eventually figure out what to do with them.
     test "Metadata that cannot be encoded is submitted with nil value", %{ref: ref} do
       Logger.metadata(tuple: {"item1", "item2"})
-      Logger.metadata(some_function: &Enum.map/2)
       Logger.info("message")
 
       assert_receive({^ref, %{body: body, base_url: @base_url, path: @path, headers: @headers}})
@@ -142,8 +145,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                  "events" => [
                    %{
                      "attributes" => %{
-                       "tuple" => "nil",
-                       "some_function" => "nil"
+                       "tuple" => "nil"
                      }
                    }
                  ]

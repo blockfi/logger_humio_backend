@@ -66,6 +66,10 @@ defmodule Logger.Backend.Humio.Metadata do
     ref |> :erlang.ref_to_list() |> to_string()
   end
 
+  defp metadata(_, function) when is_function(function) do
+    function |> :erlang.fun_to_list() |> to_string()
+  end
+
   defp metadata([:file], file) when is_list(file), do: file
 
   defp metadata([:mfa], {mod, fun, arity})
