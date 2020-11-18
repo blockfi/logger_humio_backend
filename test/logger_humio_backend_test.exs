@@ -87,6 +87,7 @@ defmodule Logger.Backend.Humio.Test do
       ingest_api: IngestApi.Mock,
       host: "humio.url",
       format: "[$level] $message\n",
+      print_config?: true,
       token: "humio-token",
       max_batch_size: 1
     )
