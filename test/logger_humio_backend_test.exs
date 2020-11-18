@@ -402,9 +402,10 @@ defmodule Logger.Backend.Humio.Test do
   end
 
   describe "Print and log config tests" do
-    setup
+    setup [:logger_config]
 
-    test "" do
+    test "config flag is passed in captured", %{ref: ref} do
+      assert_receive {^ref, %{config: %{}}}
     end
   end
 
