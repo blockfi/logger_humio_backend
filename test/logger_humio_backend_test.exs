@@ -78,6 +78,27 @@ defmodule Logger.Backend.Humio.Test do
     {:ok, %{flush_interval_ms: flush_interval_ms, max_batch_size: max_batch_size}}
   end
 
+  defp logger_config(_context) do
+    set_mox_global()
+    parent = self()
+    ref = make_ref()
+
+    config(
+      ingest_api: IngestApi.Mock,
+      host: "humio.url",
+      format: "[$level] $message\n",
+      token: "humio-token",
+      max_batch_size: 1
+    )
+
+    expect(IngestApi.Mock, :transmit, fn state ->
+      send(parent, {ref, state})
+      @happy_result
+    end)
+
+    {:ok, %{ref: ref}}
+  end
+
   ### Tests
 
   describe "smoke tests" do
@@ -376,6 +397,13 @@ defmodule Logger.Backend.Humio.Test do
       assert error_output =~ message
       assert error_output =~ reason
       verify!()
+    end
+  end
+
+  describe "Print and log config tests" do
+    setup
+
+    test "" do
     end
   end
 
