@@ -15,6 +15,9 @@ defmodule Logger.Backend.Humio do
   @default_flush_interval_ms 2_000
   @default_debug_io_device :stdio
 
+  # sensitive keys we don't want to log
+  @sensitive_config_keys [:host, :token]
+
   # used primarily for testing
   @default_client Client.Tesla
   @default_ingest_api IngestApi.Structured
@@ -207,11 +210,6 @@ defmodule Logger.Backend.Humio do
     opts = Keyword.merge(env, opts)
     Application.put_env(:logger, name, opts)
 
-
-    # do these fields need to be logged or not? to be or to not to be
-    host = Keyword.get(opts, :host, "")
-    token = token(Keyword.get(opts, :token, ""))
-
     # false by default
     print_config? = Keyword.get(opts, :print_config?, false)
 
@@ -226,11 +224,16 @@ defmodule Logger.Backend.Humio do
       debug_io_device: Keyword.get(opts, :debug_io_device, @default_debug_io_device),
       iso8601_format_fun: TimeFormat.iso8601_format_fun(),
       fields: Keyword.get(opts, :fields, %{}),
-      tags: Keyword.get(opts, :tags, %{})
+      tags: Keyword.get(opts, :tags, %{}),
+      host: Keyword.get(opts, :host, ""),
+      token: token(Keyword.get(opts, :token, ""))
     ]
 
     if print_config? == true do
-      Logger.info("Configuration for Logger Humio Backend", keyword_list)
+      Logger.info(
+        "Configuration for Logger Humio Backend",
+        keyword_list |> Keyword.drop(@sensitive_config_keys)
+      )
     end
 
     %{
