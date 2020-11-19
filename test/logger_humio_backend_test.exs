@@ -94,7 +94,7 @@ defmodule Logger.Backend.Humio.Test do
       format: "$message",
       print_config?: false,
       token: "humio-token",
-      max_batch_size: 1
+      max_batch_size: 2
     )
 
     {:ok, %{ref: ref}}
@@ -404,12 +404,26 @@ defmodule Logger.Backend.Humio.Test do
   describe "Print and log config tests" do
     setup [:logger_test_config]
 
-    test "config flag is passed in captured", %{ref: ref} do
+    test "config flag is passed in and captured", %{ref: ref} do
+      config(print_config?: true)
+      Logger.info("Hello")
+      assert_receive {^ref, %{config: %{print_config?: true}}}
+      verify!()
+    end
+
+    test "config flag is set to log the config", %{ref: ref} do
       config(print_config?: true)
 
-      Logger.info("hello")
+      Logger.info("Hello")
 
-      assert_receive {^ref, %{config: %{print_config?: true}}}
+      assert_receive {^ref,
+                      %{
+                        log_events: [
+                          %{message: "Configuration for Logger Humio Backend"},
+                          %{message: "Hello"}
+                        ]
+                      }}
+
       verify!()
     end
   end
