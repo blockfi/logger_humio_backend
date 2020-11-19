@@ -78,29 +78,27 @@ defmodule Logger.Backend.Humio.Test do
     {:ok, %{flush_interval_ms: flush_interval_ms, max_batch_size: max_batch_size}}
   end
 
-  # defp logger_test_config(_context) do
-  #   set_mox_global()
-  #   parent = self()
-  #   ref = make_ref()
+  defp logger_test_config(_context) do
+    set_mox_global()
+    parent = self()
+    ref = make_ref()
 
-  #   config(
-  #     ingest_api: IngestApi.Mock,
-  #     host: "humio.url",
-  #     format: "[$level] $message\n",
-  #     print_config?: true,
-  #     token: "humio-token",
-  #     max_batch_size: 1
-  #   )
+    expect(IngestApi.Mock, :transmit, fn state ->
+      send(parent, {ref, state})
+      @happy_result
+    end)
 
-  #   expect(IngestApi.Mock, :transmit, fn state ->
-  #     send(parent, {ref, state})
-  #     @happy_result
-  #   end)
+    config(
+      ingest_api: IngestApi.Mock,
+      host: "humio.url",
+      format: "$message",
+      print_config?: false,
+      token: "humio-token",
+      max_batch_size: 1
+    )
 
-  #   IO.inspect(ref, label: "THIS IS THE REF")
-
-  #   {:ok, %{ref: ref}}
-  # end
+    {:ok, %{ref: ref}}
+  end
 
   ### Tests
 
@@ -403,15 +401,18 @@ defmodule Logger.Backend.Humio.Test do
     end
   end
 
-  # describe "Print and log config tests" do
-  #   setup [:logger_test_config]
+  describe "Print and log config tests" do
+    setup [:logger_test_config]
 
-  #   test "config flag is passed in captured", %{ref: ref} do
-  #     IO.inspect(ref, label: "++++++++++++++++++++")
-  #     assert_receive {^ref, %{config: %{print_config?: true}}}
-  #     verify!()
-  #   end
-  # end
+    test "config flag is passed in captured", %{ref: ref} do
+      config(print_config?: true)
+
+      Logger.info("hello")
+
+      assert_receive {^ref, %{config: %{print_config?: true}}}
+      verify!()
+    end
+  end
 
   defp config(opts) do
     :ok = Logger.configure_backend(@backend, opts)

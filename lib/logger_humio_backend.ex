@@ -211,8 +211,6 @@ defmodule Logger.Backend.Humio do
     opts = Keyword.merge(env, opts)
     Application.put_env(:logger, name, opts)
 
-    print_config? = Keyword.get(opts, :print_config?, @default_print_config?)
-
     config = [
       ingest_api: Keyword.get(opts, :ingest_api, @default_ingest_api),
       client: Keyword.get(opts, :client, @default_client),
@@ -226,10 +224,12 @@ defmodule Logger.Backend.Humio do
       fields: Keyword.get(opts, :fields, %{}),
       tags: Keyword.get(opts, :tags, %{}),
       host: Keyword.get(opts, :host, ""),
-      token: token(Keyword.get(opts, :token, ""))
+      token: token(Keyword.get(opts, :token, "")),
+      name: name,
+      print_config?: Keyword.get(opts, :print_config?, @default_print_config?)
     ]
 
-    if print_config? == true do
+    if config[:print_config] == true do
       Logger.info(
         "Configuration for Logger Humio Backend",
         config |> Keyword.drop(@sensitive_config_keys)
