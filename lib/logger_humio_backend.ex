@@ -210,10 +210,9 @@ defmodule Logger.Backend.Humio do
     opts = Keyword.merge(env, opts)
     Application.put_env(:logger, name, opts)
 
-    # false by default
     print_config? = Keyword.get(opts, :print_config?, false)
 
-    keyword_list = [
+    config = [
       ingest_api: Keyword.get(opts, :ingest_api, @default_ingest_api),
       client: Keyword.get(opts, :client, @default_client),
       level: Keyword.get(opts, :level, @default_level),
@@ -232,12 +231,12 @@ defmodule Logger.Backend.Humio do
     if print_config? == true do
       Logger.info(
         "Configuration for Logger Humio Backend",
-        keyword_list |> Keyword.drop(@sensitive_config_keys)
+        config |> Keyword.drop(@sensitive_config_keys)
       )
     end
 
     %{
-      config: Enum.into(keyword_list, %{}),
+      config: Enum.into(config, %{}),
       log_events: [],
       flush_timer: nil
     }
