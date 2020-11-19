@@ -78,7 +78,7 @@ defmodule Logger.Backend.Humio.Test do
     {:ok, %{flush_interval_ms: flush_interval_ms, max_batch_size: max_batch_size}}
   end
 
-  defp logger_config(_context) do
+  defp logger_test_config(_context) do
     set_mox_global()
     parent = self()
     ref = make_ref()
@@ -96,6 +96,8 @@ defmodule Logger.Backend.Humio.Test do
       send(parent, {ref, state})
       @happy_result
     end)
+
+    IO.inspect(ref, label: "THIS IS THE REF")
 
     {:ok, %{ref: ref}}
   end
@@ -402,10 +404,12 @@ defmodule Logger.Backend.Humio.Test do
   end
 
   describe "Print and log config tests" do
-    setup [:logger_config]
+    setup [:logger_test_config]
 
     test "config flag is passed in captured", %{ref: ref} do
-      assert_receive {^ref, %{config: %{}}}
+      IO.inspect(ref, label: "++++++++++++++++++++")
+      assert_receive {^ref, %{config: %{print_config?: true}}}
+      verify!()
     end
   end
 
