@@ -93,7 +93,7 @@ defmodule Logger.Backend.Humio.Test do
       host: "humio.url",
       format: "$message",
       token: "humio-token",
-      max_batch_size: 1
+      max_batch_size: 2
     )
 
     {:ok, %{ref: ref}}
@@ -405,17 +405,20 @@ defmodule Logger.Backend.Humio.Test do
 
     test "config flag is passed in and captured", %{ref: ref} do
       config(print_config: true)
+      Logger.info("hello")
       assert_receive {^ref, %{config: %{print_config: true}}}
       verify!()
     end
 
     test "config flag is set to log the config", %{ref: ref} do
       config(print_config: true)
+      Logger.info("hello")
 
       assert_receive {^ref,
                       %{
                         log_events: [
-                          %{message: "Configuration for Logger Humio Backend"}
+                          %{message: "Configuration for Logger Humio Backend"},
+                          %{message: "hello"}
                         ]
                       }}
 
