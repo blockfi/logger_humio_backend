@@ -77,14 +77,16 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
 
       assert %{
                "domain" => ["elixir"],
-               "file" =>
-                 "/home/andreas/workspace/logger_humio_backend/test/logger_humio_backend/ingest_api/structured_test.exs",
+               "file" => file,
                "function" => "test smokes tests:  Send payload successfully/1",
                "mfa" =>
                  "Logger.Humio.Backend.IngestApi.StructuredTest.\"test smokes tests:  Send payload successfully\"/1",
                "module" => "Logger.Humio.Backend.IngestApi.StructuredTest",
                "service" => "cool_service"
              } = attributes
+
+      assert file =~
+               "logger_humio_backend/test/logger_humio_backend/ingest_api/structured_test.exs"
     end
 
     test "Various Metadata is encoded correctly as attributes", %{ref: ref} do
