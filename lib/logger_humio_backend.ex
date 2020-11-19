@@ -14,7 +14,7 @@ defmodule Logger.Backend.Humio do
   @default_max_batch_size 20
   @default_flush_interval_ms 2_000
   @default_debug_io_device :stdio
-  @default_print_config? false
+  @default_print_config false
 
   # sensitive keys we don't want to log
   @sensitive_config_keys [:host, :token]
@@ -226,10 +226,16 @@ defmodule Logger.Backend.Humio do
       host: Keyword.get(opts, :host, ""),
       token: token(Keyword.get(opts, :token, "")),
       name: name,
-      print_config?: Keyword.get(opts, :print_config?, @default_print_config?)
+      print_config: Keyword.get(opts, :print_config, @default_print_config)
     ]
 
-    if config[:print_config?] == true do
+    IO.inspect(config, label: "CONFIG +++++++++++")
+
+    IO.inspect(Keyword.get(opts, :print_config, @default_print_config),
+      label: "+++++++++++++++++++"
+    )
+
+    if config[:print_config] == true do
       Logger.info(
         "Configuration for Logger Humio Backend",
         config |> Keyword.drop(@sensitive_config_keys)
