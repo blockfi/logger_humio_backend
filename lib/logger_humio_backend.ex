@@ -14,6 +14,7 @@ defmodule Logger.Backend.Humio do
   @default_max_batch_size 20
   @default_flush_interval_ms 2_000
   @default_debug_io_device :stdio
+  @default_print_config? false
 
   # sensitive keys we don't want to log
   @sensitive_config_keys [:host, :token]
@@ -210,7 +211,7 @@ defmodule Logger.Backend.Humio do
     opts = Keyword.merge(env, opts)
     Application.put_env(:logger, name, opts)
 
-    print_config? = Keyword.get(opts, :print_config?, false)
+    print_config? = Keyword.get(opts, :print_config?, @default_print_config?)
 
     config = [
       ingest_api: Keyword.get(opts, :ingest_api, @default_ingest_api),
