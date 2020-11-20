@@ -229,8 +229,6 @@ defmodule Logger.Backend.Humio do
       print_config: Keyword.get(opts, :print_config, @default_print_config)
     ]
 
-    IO.inspect(config |> Keyword.drop(@sensitive_config_keys), label: "++++++++++++")
-
     if config[:print_config] == true do
       Logger.info(
         "Configuration for Logger Humio Backend",
