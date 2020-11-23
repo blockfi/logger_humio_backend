@@ -38,19 +38,57 @@ defmodule Logger.Backend.Humio.Metadata do
   end
 
   def format_metadata(metadata) do
-    Iteraptor.map(metadata, fn {k, v} -> {k, metadata(k, v)} end)
+    Iteraptor.map(metadata, fn {k, v} ->
+      {k, metadata(k, v)}
+    end)
+    |> Iteraptor.jsonify()
   end
 
   defp metadata([:time], _), do: nil
   defp metadata([:gl], _), do: nil
   defp metadata([:report_cb], _), do: nil
+  defp metadata([:file], file) when is_list(file), do: file
+
+  defp metadata([:mfa], {mod, fun, arity})
+       when is_atom(mod) and is_atom(fun) and is_integer(arity) do
+    Exception.format_mfa(mod, fun, arity)
+  end
+
+  defp metadata([:initial_call], {mod, fun, arity})
+       when is_atom(mod) and is_atom(fun) and is_integer(arity) do
+    Exception.format_mfa(mod, fun, arity)
+  end
 
   defp metadata(_, nil), do: nil
+
+  defp metadata(_, list) when is_list(list) do
+    if Keyword.keyword?(list) do
+      Iteraptor.map(list, fn {k, v} -> metadata(k, v) end)
+    else
+      Iteraptor.map(list, fn v -> metadata(nil, v) end)
+    end
+  end
+
+  defp metadata(_, struct) when is_struct(struct) do
+    struct
+    |> Map.from_struct()
+    |> Iteraptor.map(fn {k, v} -> {k, metadata(k, v)} end)
+  end
+
+  defp metadata(_, map) when is_map(map) do
+    Iteraptor.map(map, fn {k, v} -> {k, metadata(k, v)} end)
+  end
+
   defp metadata(_, string) when is_binary(string), do: string
   defp metadata(_, integer) when is_integer(integer), do: Integer.to_string(integer)
   defp metadata(_, float) when is_float(float), do: Float.to_string(float)
   defp metadata(_, pid) when is_pid(pid), do: pid |> :erlang.pid_to_list() |> to_string()
-  defp metadata(_, map) when is_map(map), do: map
+
+  defp metadata(_, tuple) when is_tuple(tuple) do
+    tuple
+    |> Tuple.to_list()
+    |> Enum.map(fn v -> metadata(nil, v) end)
+  end
 
   defp metadata(_, atom) when is_atom(atom) do
     case Atom.to_string(atom) do
@@ -68,18 +106,6 @@ defmodule Logger.Backend.Humio.Metadata do
 
   defp metadata(_, function) when is_function(function) do
     function |> :erlang.fun_to_list() |> to_string()
-  end
-
-  defp metadata([:file], file) when is_list(file), do: file
-
-  defp metadata([:mfa], {mod, fun, arity})
-       when is_atom(mod) and is_atom(fun) and is_integer(arity) do
-    Exception.format_mfa(mod, fun, arity)
-  end
-
-  defp metadata([:initial_call], {mod, fun, arity})
-       when is_atom(mod) and is_atom(fun) and is_integer(arity) do
-    Exception.format_mfa(mod, fun, arity)
   end
 
   defp metadata(_, other) do

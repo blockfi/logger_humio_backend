@@ -163,7 +163,7 @@ defmodule Logger.Backend.Humio.Test do
       # we multiply by 0.7 to ensure we're under the threshold introduced by the 20% jitter.
       refute_receive({^ref, %{}}, round(flush_interval_ms * 0.7))
 
-      # we multipley by 0.5 so that we assert the :transmit is received between 0.7 to 1.3 the flush interval,
+      # we multiply by 0.5 so that we assert the :transmit is received between 0.7 to 1.3 the flush interval,
       # which accounts for the 20% jitter.
       assert_receive(
         {^ref, %{log_events: [%{message: "message"}]}},

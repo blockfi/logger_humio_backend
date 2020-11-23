@@ -5,7 +5,19 @@ LoggerHumioBackend
 
 A [Elixir Logger](http://elixir-lang.org/docs/v1.0/logger/Logger.html) backend for [Humio](https://www.humio.com/).
 
-## Supported options
+## Using it with Mix
+
+To use it in your Mix projects, first add it as a dependency:
+
+```elixir
+def deps do
+  [{:logger_humio_backend, "~> 0.2.0"}]
+end
+```
+Then run mix deps.get to install it.
+
+
+## Configuration
 
 ### Required
 * **host**: `String.t()`. The hostname of the Humio ingest API endpoint.
@@ -22,20 +34,9 @@ A [Elixir Logger](http://elixir-lang.org/docs/v1.0/logger/Logger.html) backend f
 * **fields**: `map()`. Can be used to specify fields that will be added to each request. Useful for setting service name, for example, without needing to add it to every log line. [default: `%{}`]
 * **tags**: `map()`. Can be used to specify [tags](https://docs.humio.com/ingesting-data/parsers/tagging/) that will be added to each request. Only use if you understand the difference between fields and tags in the context of Humio. [default: `%{}`]
 
-## Using it with Mix
+### Configuration Examples
 
-To use it in your Mix projects, first add it as a dependency:
-
-```elixir
-def deps do
-  [{:logger_humio_backend, "~> 0.2.0"}]
-end
-```
-Then run mix deps.get to install it.
-
-## Configuration Examples
-
-### Runtime
+#### Runtime
 
 ```elixir
 Logger.add_backend {Logger.Backend.Humio, :debug}
@@ -46,9 +47,9 @@ Logger.configure {Logger.Backend.Humio, :debug},
   token: "ingest-token-goes-here",
 ```
 
-### Application config
+#### Application config
 
-#### Minimal
+##### Minimal
 
 ```elixir
 config :logger,
@@ -60,7 +61,7 @@ config :logger, :humio_log,
   token: "ingest-token-goes-here",
 ```
 
-#### With All Options
+##### With All Options
 ```elixir
 config :logger,
   utc_log: true #recommended
@@ -82,10 +83,6 @@ config :logger, :humio_log,
     "env" => "dev"
   }
 ```
-
-### Tesla
-
-The default (and currently only) client.  Compresses payload using `gzip` and contains sensible retry defaults.
 
 ## Batching
 
@@ -126,3 +123,42 @@ The valid parameters you can use are:
 * `$message` - the log message
 * `$node` - the node that prints the message
 * `$pid` - the PID of the process from which the log was sent. This works even when `:pid` is excluded from the `metadata` config.
+
+## Plug
+
+The library also includes a Plug that is a drop-in replacement for [Plug.Logger](https://hexdocs.pm/plug/Plug.Logger.html)
+
+It logs basic request information in the format:
+
+```
+Get /index.html Sent 200 in 5720us
+```
+
+To use it, just plug it into the desired module.
+
+```
+plug Logger.Backend.Humio.Plug
+```
+
+Additionally, the logger ships metadata from the [Plug.Conn](https://hexdocs.pm/plug/Plug.Conn.html) struct. The backend's configuration must allow for the key `conn` to be allowed for this to occur.
+
+The connection's fields in Humio will have `conn.` as the suffix. For example, the connection `status` will be under `conn.status`, the `request_path` under `conn.request_path`, etc.
+
+For a complete list of fields, [see the Plug.Conn documentation](https://hexdocs.pm/plug/Plug.Conn.html). The Plug also adds an additional field, `response_time_us`, which indicates the time it took to process the request in microseconds.
+
+### Options
+
+* `:log` - The log level at which this plug should log its request info. [default: `:info`]
+* `:metadata` - The connection included as metadata Humio fields. Options are `:all`, a list of atoms like `[:method, :request_path]`, or a Tuple in the form `{:except, [:cookies, :assigns]}`, which ships all metadata except the atoms in the list. [default: `[:method, :remote_ip, :request_path, :status, :response_time_us]`]
+
+### Example Configuration with all options
+
+```
+  pipeline :instrumentation do
+    plug Humio.Plug, 
+      [
+        log: :debug, 
+        metadata: [:method, :response_time_us, :port, :host]
+      ]
+  end
+```
