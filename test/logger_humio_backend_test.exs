@@ -32,7 +32,8 @@ defmodule Logger.Backend.Humio.Test do
       host: "humio.url",
       format: "[$level] $message\n",
       token: "humio-token",
-      max_batch_size: 1
+      max_batch_size: 1,
+      reset_config: true
     )
 
     {:ok, %{ref: ref}}
@@ -54,7 +55,8 @@ defmodule Logger.Backend.Humio.Test do
       format: "[$level] $message\n",
       token: "humio-token",
       max_batch_size: 3,
-      flush_interval_ms: 10_000
+      flush_interval_ms: 10_000,
+      reset_config: true
     )
 
     {:ok, %{ref: ref}}
@@ -72,7 +74,8 @@ defmodule Logger.Backend.Humio.Test do
       format: "$message",
       token: "humio-token",
       max_batch_size: max_batch_size,
-      flush_interval_ms: flush_interval_ms
+      flush_interval_ms: flush_interval_ms,
+      reset_config: true
     )
 
     {:ok, %{flush_interval_ms: flush_interval_ms, max_batch_size: max_batch_size}}
@@ -93,7 +96,8 @@ defmodule Logger.Backend.Humio.Test do
       host: "humio.url",
       format: "$message",
       token: "humio-token",
-      max_batch_size: 2
+      max_batch_size: 2,
+      reset_config: true
     )
 
     {:ok, %{ref: ref}}
