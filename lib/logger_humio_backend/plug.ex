@@ -8,7 +8,7 @@ defmodule Logger.Backend.Humio.Plug do
   @behaviour Plug
 
   @default_level :info
-  @default_metadata [:method, :remote_ip, :request_path, :status]
+  @default_metadata [:method, :remote_ip, :request_path, :status, :response_time_us]
 
   def init(opts) do
     opts
@@ -59,7 +59,8 @@ defmodule Logger.Backend.Humio.Plug do
     [response_time_us: diff] ++ conn_metadata
   end
 
-  # Puts certain fields into a more legible format. Separate from Metadata.format_metadata since certain fields we only see here
+  # Puts certain fields into a more legible format.
+  # Separate from Metadata.format_metadata since certain fields we only see here
   defp format_metadata(metadata) do
     Iteraptor.map(metadata, fn {k, v} -> {k, metadata(k, v)} end)
   end

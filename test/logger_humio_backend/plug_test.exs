@@ -54,6 +54,7 @@ defmodule Logger.Backend.Humio.PlugTest do
                    %{
                      "attributes" => %{
                        "conn" => %{
+                         "response_time_us" => _,
                          "adapter" => [
                            "Plug.Adapters.Test.Conn",
                            %{
@@ -114,10 +115,7 @@ defmodule Logger.Backend.Humio.PlugTest do
 
     test " prints a little bit of metadata, as a treat", %{ref: ref} do
       conn(:get, "/")
-      |> call(
-        log_level: :info,
-        metadata: [:method, :remote_ip, :request_path, :status]
-      )
+      |> call([])
       |> send_resp(200, "response_body")
 
       assert_receive {^ref, %{body: body}}
@@ -133,7 +131,8 @@ defmodule Logger.Backend.Humio.PlugTest do
                          "method" => "GET",
                          "request_path" => "/",
                          "remote_ip" => "127.0.0.1",
-                         "status" => "200"
+                         "status" => "200",
+                         "response_time_us" => _
                        }
                      },
                      "rawstring" => rawstring,
