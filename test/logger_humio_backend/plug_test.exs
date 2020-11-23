@@ -38,8 +38,6 @@ defmodule Logger.Backend.Humio.PlugTest do
     setup [:smoke_test_config]
 
     test " prints lots of metadata successfully", %{ref: ref} do
-      message = "great success"
-
       conn(:get, "/")
       |> call(metadata: :all)
       |> send_resp(200, "response_body")
@@ -110,7 +108,7 @@ defmodule Logger.Backend.Humio.PlugTest do
                }
              ] = decoded_body
 
-      assert rawstring =~ "[info] GET / Sent 200 in"
+      assert rawstring =~ "[info] GET / Sent 200"
     end
 
     test " prints a little bit of metadata, as a treat", %{ref: ref} do
@@ -142,7 +140,7 @@ defmodule Logger.Backend.Humio.PlugTest do
                }
              ] = decoded_body
 
-      assert rawstring =~ "[info] GET / Sent 200 in"
+      assert rawstring =~ "[info] GET / Sent 200"
     end
   end
 
