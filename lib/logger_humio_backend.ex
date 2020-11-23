@@ -208,13 +208,36 @@ defmodule Logger.Backend.Humio do
   end
 
   defp configure(name, opts) do
+    IO.inspect(opts, label: "THIS IS THE OPTS")
     env = Application.get_env(:logger, name, [])
+    IO.inspect(env, label: "THIS IS THE ENV")
     opts = Keyword.merge(env, opts)
     Application.put_env(:logger, name, opts)
-    config = retrieve_config(opts, name)
+
+    # new_params = Enum.map(opts, fn x -> end)
+    config = [
+      ingest_api: Keyword.get(opts, :ingest_api, @default_ingest_api),
+      client: Keyword.get(opts, :client, @default_client),
+      level: Keyword.get(opts, :level, @default_level),
+      metadata: Keyword.get(opts, :metadata, @default_metadata),
+      format: opts |> Keyword.get(:format, nil) |> Formatter.compile(),
+      max_batch_size: Keyword.get(opts, :max_batch_size, @default_max_batch_size),
+      flush_interval_ms: Keyword.get(opts, :flush_interval_ms, @default_flush_interval_ms),
+      debug_io_device: Keyword.get(opts, :debug_io_device, @default_debug_io_device),
+      iso8601_format_fun: TimeFormat.iso8601_format_fun(),
+      fields: Keyword.get(opts, :fields, %{}),
+      tags: Keyword.get(opts, :tags, %{}),
+      host: Keyword.get(opts, :host, ""),
+      token: token(Keyword.get(opts, :token, "")),
+      name: name,
+      print_config: Keyword.get(opts, :print_config, @default_print_config)
+    ]
 
     if config[:print_config] == true do
-      print_config(config)
+      Logger.info(
+        "Configuration for Logger Humio Backend",
+        config |> Keyword.drop(@sensitive_config_keys)
+      )
     end
 
     %{
@@ -222,53 +245,6 @@ defmodule Logger.Backend.Humio do
       log_events: [],
       flush_timer: nil
     }
-  end
-
-  defp print_config(config) do
-    Logger.info(
-      "Configuration for Logger Humio Backend",
-      config |> Keyword.drop(@sensitive_config_keys)
-    )
-  end
-
-  defp retrieve_config(opts, name) do
-    if Keyword.get(opts, :reset_config, @default_reset_config) == true do
-      [
-        ingest_api: Keyword.get(opts, :ingest_api, @default_ingest_api),
-        client: Keyword.get(opts, :client, @default_client),
-        level: Keyword.get(opts, :level, @default_level),
-        metadata: Keyword.get(opts, :metadata, @default_metadata),
-        format: opts |> Keyword.get(:format, nil) |> Formatter.compile(),
-        max_batch_size: Keyword.get(opts, :max_batch_size, @default_max_batch_size),
-        flush_interval_ms: Keyword.get(opts, :flush_interval_ms, @default_flush_interval_ms),
-        debug_io_device: Keyword.get(opts, :debug_io_device, @default_debug_io_device),
-        iso8601_format_fun: TimeFormat.iso8601_format_fun(),
-        fields: Keyword.get(opts, :fields, %{}),
-        tags: Keyword.get(opts, :tags, %{}),
-        host: Keyword.get(opts, :host, ""),
-        token: token(Keyword.get(opts, :token, "")),
-        name: name,
-        print_config: Keyword.get(opts, :print_config, @default_print_config)
-      ]
-    else
-      [
-        ingest_api: @default_ingest_api,
-        client: @default_client,
-        level: @default_level,
-        metadata: @default_metadata,
-        format: opts |> Keyword.get(:format, nil) |> Formatter.compile(),
-        max_batch_size: @default_max_batch_size,
-        flush_interval_ms: @default_flush_interval_ms,
-        debug_io_device: @default_debug_io_device,
-        iso8601_format_fun: TimeFormat.iso8601_format_fun(),
-        fields: Keyword.get(opts, :fields, %{}),
-        tags: Keyword.get(opts, :tags, %{}),
-        host: Keyword.get(opts, :host, ""),
-        token: token(Keyword.get(opts, :token, "")),
-        name: name,
-        print_config: Keyword.get(opts, :print_config, @default_print_config)
-      ]
-    end
   end
 
   defp token({:system, envvar}) do
