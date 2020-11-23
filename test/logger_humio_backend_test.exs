@@ -405,12 +405,32 @@ defmodule Logger.Backend.Humio.Test do
 
     test "config flag is passed in and captured", %{ref: ref} do
       config(print_config: true)
+      Logger.info("hello")
       assert_receive {^ref, %{config: %{print_config: true}}}
+
+      set_mox_global()
+      parent = self()
+      ref = make_ref()
+
+      expect(IngestApi.Mock, :transmit, fn state ->
+        send(parent, {ref, state})
+        @happy_result
+      end)
+
+      config(
+        ingest_api: IngestApi.Mock,
+        host: "humio.url",
+        format: "$message",
+        token: "humio-token",
+        max_batch_size: 2
+      )
+
       Logger.info("hello")
 
-      assert_receive {^ref,
+      assert_receive {ref,
                       %{
                         log_events: [
+                          %{message: "Configuration for Logger Humio Backend"},
                           %{message: "hello"}
                         ]
                       }}
