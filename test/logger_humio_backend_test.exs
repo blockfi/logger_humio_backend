@@ -404,13 +404,13 @@ defmodule Logger.Backend.Humio.Test do
     setup [:logger_test_config]
 
     test "config flag is passed in and captured", %{ref: ref} do
-      config(print_config: true, flush_interval_ms: 200)
+      config(print_config: true)
+      assert_receive {^ref, %{config: %{print_config: true}}}
       Logger.info("hello")
 
-      assert_receive {^ref, %{config: %{print_config: true}},
+      assert_receive {^ref,
                       %{
                         log_events: [
-                          %{message: "Configuration for Logger Humio Backend"},
                           %{message: "hello"}
                         ]
                       }}
