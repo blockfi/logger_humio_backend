@@ -86,7 +86,7 @@ defmodule Logger.Backend.Humio.PlugTest do
                          "private" => %{},
                          "query_params" => %{"aspect" => "query_params"},
                          "query_string" => "",
-                         "remote_ip" => ["127", "0", "0", "1"],
+                         "remote_ip" => "127.0.0.1",
                          "req_cookies" => %{"aspect" => "cookies"},
                          "req_headers" => [],
                          "request_path" => "/",
@@ -102,22 +102,21 @@ defmodule Logger.Backend.Humio.PlugTest do
                          "status" => "200"
                        }
                      },
-                     "rawstring" => "[info] great success",
+                     "rawstring" => rawstring,
                      "timestamp" => _
                    }
                  ]
                }
              ] = decoded_body
+
+      assert rawstring =~ "[info] GET / Sent 200 in"
     end
 
     test " prints a little bit of metadata, as a treat", %{ref: ref} do
-      message = "great success"
-
       conn(:get, "/")
       |> call(
         log_level: :info,
-        metadata: [:method, :remote_ip, :request_path, :status],
-        message: message
+        metadata: [:method, :remote_ip, :request_path, :status]
       )
       |> send_resp(200, "response_body")
 
@@ -133,16 +132,18 @@ defmodule Logger.Backend.Humio.PlugTest do
                        "conn" => %{
                          "method" => "GET",
                          "request_path" => "/",
-                         "remote_ip" => ["127", "0", "0", "1"],
+                         "remote_ip" => "127.0.0.1",
                          "status" => "200"
                        }
                      },
-                     "rawstring" => "[info] great success",
+                     "rawstring" => rawstring,
                      "timestamp" => _
                    }
                  ]
                }
              ] = decoded_body
+
+      assert rawstring =~ "[info] GET / Sent 200 in"
     end
   end
 
