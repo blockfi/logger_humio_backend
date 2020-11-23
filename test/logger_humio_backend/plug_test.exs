@@ -4,7 +4,7 @@ defmodule Logger.Backend.Humio.PlugTest do
 
   import Mox
 
-  alias Logger.Backend.Humio.{IngestApi, Plug}
+  alias Logger.Backend.Humio.{Client, IngestApi, Plug}
 
   require Logger
 
@@ -13,44 +13,136 @@ defmodule Logger.Backend.Humio.PlugTest do
 
   @happy_result {:ok, %{status: 200, body: "somebody"}}
 
-  defp plug_test_config(_context) do
+  defp smoke_test_config(_context) do
     set_mox_global()
     parent = self()
     ref = make_ref()
 
-    expect(IngestApi.Mock, :transmit, fn state ->
+    expect(Client.Mock, :send, fn state ->
       send(parent, {ref, state})
       @happy_result
     end)
 
     config(
-      ingest_api: IngestApi.Mock,
-      host: "humio.url",
+      client: Client.Mock,
+      ingest_api: IngestApi.Structured,
       format: "[$level] $message\n",
-      token: "humio-token",
-      max_batch_size: 1
+      max_batch_size: 1,
+      metadata: [:conn]
     )
 
     {:ok, %{ref: ref}}
   end
 
   describe "Plug" do
-    setup [:plug_test_config]
+    setup [:smoke_test_config]
 
     test " prints lots of metadata successfully", %{ref: ref} do
       message = "great success"
 
       conn(:get, "/")
-      |> call(log_level: :info, message: message)
+      |> call(log_level: :info, metadata: :all, message: message)
       |> send_resp(200, "response_body")
 
-      assert_receive {^ref, events}
+      assert_receive {^ref, %{body: body}}
 
-      assert %{
-               log_events: [
-                 %{message: message}
-               ]
-             } = events
+      decoded_body = Jason.decode!(body)
+
+      assert [
+               %{
+                 "events" => [
+                   %{
+                     "attributes" => %{
+                       "conn" => %{
+                         "adapter" => [
+                           "Plug.Adapters.Test.Conn",
+                           %{
+                             "chunks" => nil,
+                             "http_protocol" => "HTTP/1.1",
+                             "method" => "GET",
+                             "owner" => _,
+                             "params" => nil,
+                             "peer_data" => %{
+                               "address" => ["127", "0", "0", "1"],
+                               "port" => "111317",
+                               "ssl_cert" => nil
+                             },
+                             "ref" => _,
+                             "req_body" => ""
+                           }
+                         ],
+                         "assigns" => %{},
+                         "before_send" => [_],
+                         "body_params" => %{"aspect" => "body_params"},
+                         "cookies" => %{"aspect" => "cookies"},
+                         "halted" => "false",
+                         "host" => "www.example.com",
+                         "method" => "GET",
+                         "owner" => _,
+                         "params" => %{"aspect" => "params"},
+                         "path_info" => [],
+                         "path_params" => %{},
+                         "port" => "80",
+                         "private" => %{},
+                         "query_params" => %{"aspect" => "query_params"},
+                         "query_string" => "",
+                         "remote_ip" => ["127", "0", "0", "1"],
+                         "req_cookies" => %{"aspect" => "cookies"},
+                         "req_headers" => [],
+                         "request_path" => "/",
+                         "resp_body" => "response_body",
+                         "resp_cookies" => %{},
+                         "resp_headers" => %{
+                           "cache-control" => "max-age=0, private, must-revalidate"
+                         },
+                         "scheme" => "http",
+                         "script_name" => [],
+                         "secret_key_base" => nil,
+                         "state" => "set",
+                         "status" => "200"
+                       }
+                     },
+                     "rawstring" => "[info] great success",
+                     "timestamp" => _
+                   }
+                 ]
+               }
+             ] = decoded_body
+    end
+
+    test " prints a little bit of metadata, as a treat", %{ref: ref} do
+      message = "great success"
+
+      conn(:get, "/")
+      |> call(
+        log_level: :info,
+        metadata: [:method, :remote_ip, :request_path, :status],
+        message: message
+      )
+      |> send_resp(200, "response_body")
+
+      assert_receive {^ref, %{body: body}}
+
+      decoded_body = Jason.decode!(body)
+
+      assert [
+               %{
+                 "events" => [
+                   %{
+                     "attributes" => %{
+                       "conn" => %{
+                         "method" => "GET",
+                         "request_path" => "/",
+                         "remote_ip" => ["127", "0", "0", "1"],
+                         "status" => "200"
+                       }
+                     },
+                     "rawstring" => "[info] great success",
+                     "timestamp" => _
+                   }
+                 ]
+               }
+             ] = decoded_body
     end
   end
 

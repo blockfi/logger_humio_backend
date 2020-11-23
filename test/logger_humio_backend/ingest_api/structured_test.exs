@@ -3,7 +3,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
 
   import Mox
 
-  alias Logger.Backend.Humio.{Client, IngestApi}
+  alias Logger.Backend.Humio.{Client, IngestApi, TestStruct}
 
   require Logger
 
@@ -97,6 +97,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
       Logger.metadata(string: "some string")
       Logger.metadata(map: %{"map_key" => "map_value"})
       Logger.metadata(list: ["list_entry_1", "list_entry_2"])
+      Logger.metadata(struct: %TestStruct{})
       pid = self()
       pid_string = :erlang.pid_to_list(pid) |> to_string()
       Logger.metadata(pid: pid)
@@ -109,6 +110,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
       function = &Enum.map/2
       function_string = function |> :erlang.fun_to_list() |> to_string()
       Logger.metadata(function: function)
+      Logger.metadata(tuple: {:ok, "value"})
       Logger.info("message")
 
       assert_receive({^ref, %{body: body, base_url: @base_url, path: @path, headers: @headers}})
@@ -127,27 +129,9 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                        "map" => %{"map_key" => "map_value"},
                        "list" => ["list_entry_1", "list_entry_2"],
                        "port" => ^port_string,
-                       "function" => ^function_string
-                     }
-                   }
-                 ]
-               }
-             ] = Jason.decode!(body)
-    end
-
-    # Should eventually figure out what to do with them.
-    test "Metadata that cannot be encoded is submitted with nil value", %{ref: ref} do
-      Logger.metadata(tuple: {"item1", "item2"})
-      Logger.info("message")
-
-      assert_receive({^ref, %{body: body, base_url: @base_url, path: @path, headers: @headers}})
-
-      assert [
-               %{
-                 "events" => [
-                   %{
-                     "attributes" => %{
-                       "tuple" => "nil"
+                       "function" => ^function_string,
+                       "struct" => %{"name" => "John", "age" => "27"},
+                       "tuple" => ["ok", "value"]
                      }
                    }
                  ]
