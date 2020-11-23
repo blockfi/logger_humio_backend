@@ -15,7 +15,7 @@ defmodule Logger.Backend.Humio.Plug do
   end
 
   def call(conn, opts) do
-    level = Keyword.get(opts, :level, @default_level)
+    level = Keyword.get(opts, :log, @default_level)
     keys = Keyword.get(opts, :metadata, @default_metadata)
 
     start = System.monotonic_time()

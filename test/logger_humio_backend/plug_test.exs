@@ -41,7 +41,7 @@ defmodule Logger.Backend.Humio.PlugTest do
       message = "great success"
 
       conn(:get, "/")
-      |> call(log_level: :info, metadata: :all, message: message)
+      |> call(metadata: :all)
       |> send_resp(200, "response_body")
 
       assert_receive {^ref, %{body: body}}
