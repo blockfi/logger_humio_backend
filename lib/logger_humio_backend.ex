@@ -226,26 +226,22 @@ defmodule Logger.Backend.Humio do
     env = Application.get_env(:logger, name, [])
     opts = Keyword.merge(env, opts)
 
-    format = opts |> Keyword.get(:format, nil) |> Formatter.compile()
-
-    config =
-      Map.merge(@default_config_map, Enum.into(opts, %{}))
-      |> Map.put(:iso8601_format_fun, TimeFormat.iso8601_format_fun())
-      |> Map.put(:format, format)
+    config = Map.merge(@default_config_map, Enum.into(opts, %{}))
+    Application.put_env(:logger, name, opts)
+    new_config = Map.put(config, :iso8601_format_fun, TimeFormat.iso8601_format_fun())
+      |> Map.put(:format, opts |> Keyword.get(:format, nil) |> Formatter.compile())
       |> Map.put(:token, token(Keyword.get(opts, :token, "")))
       |> Enum.into([])
 
-    Application.put_env(:logger, name, config)
-
-    if config[:print_config] == true do
+    if new_config[:print_config] == true do
       Logger.info(
         "Configuration for Logger Humio Backend",
-        config |> Keyword.drop(@sensitive_config_keys)
+        new_config |> Keyword.drop(@sensitive_config_keys)
       )
     end
 
     %{
-      config: Enum.into(config, %{}),
+      config: Enum.into(new_config, %{}),
       log_events: [],
       flush_timer: nil
     }
