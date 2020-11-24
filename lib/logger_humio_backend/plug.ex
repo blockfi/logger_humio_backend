@@ -34,7 +34,7 @@ defmodule Logger.Backend.Humio.Plug do
       " ",
       conn.request_path,
       " Sent ",
-      Integer.to_string(conn.status),
+      Integer.to_string(conn.status)
     ]
   end
 
@@ -56,7 +56,8 @@ defmodule Logger.Backend.Humio.Plug do
   # Separate from Metadata.format_metadata since certain fields we only see here
   defp format_metadata(metadata) do
     Iteraptor.map(metadata, fn {k, v} ->
-      {k, metadata(k, v)} end)
+      {k, metadata(k, v)}
+    end)
   end
 
   defp metadata([:remote_ip], ip) do
