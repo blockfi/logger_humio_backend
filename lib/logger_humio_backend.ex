@@ -224,19 +224,18 @@ defmodule Logger.Backend.Humio do
 
   defp configure(name, opts) do
     env = Application.get_env(:logger, name, [])
-    IO.inspect(env, label: "THIS IS THE ENV")
     opts = Keyword.merge(env, opts)
-    IO.inspect(opts, label: "THIS IS THE OPTS")
-    Application.put_env(:logger, name, opts)
+
+    format = opts |> Keyword.get(:format, nil) |> Formatter.compile()
 
     config =
       Map.merge(@default_config_map, Enum.into(opts, %{}))
       |> Map.put(:iso8601_format_fun, TimeFormat.iso8601_format_fun())
-      |> Map.put(:format, opts |> Keyword.get(:format, nil) |> Formatter.compile())
+      |> Map.put(:format, format)
+      |> Map.put(:token, token(Keyword.get(opts, :token, "")))
       |> Enum.into([])
 
-    IO.inspect(config, label: "NEW CONFIG")
-    IO.inspect(config[:print_config], label: "TRUE OR FALSE")
+    Application.put_env(:logger, name, config)
 
     if config[:print_config] == true do
       Logger.info(
