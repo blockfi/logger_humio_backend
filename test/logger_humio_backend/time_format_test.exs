@@ -7,7 +7,6 @@ defmodule Logger.Backend.Humio.TimeFormatTest do
     fun = TimeFormat.iso8601_format_fun(true)
     ts = LogHelpers.timestamp()
     formatted = fun.(ts)
-    assert String.ends_with?(formatted, "+00:00")
     assert {:ok, _, _} = DateTime.from_iso8601(formatted)
   end
 

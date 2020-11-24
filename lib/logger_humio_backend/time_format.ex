@@ -21,9 +21,9 @@ defmodule Logger.Backend.Humio.TimeFormat do
     end
   end
 
-  defp iso8601_format_utc({{year, month, day}, {hour, minute, second, millisecond}}) do
-    {:ok, ts} = NaiveDateTime.new(year, month, day, hour, minute, second, millisecond * 1000)
-    ts |> Timex.to_datetime("Etc/UTC") |> Timex.format!("{ISO:Extended}")
+  defp iso8601_format_utc({date, time}) do
+    [Logger.Formatter.format_date(date), "T", Logger.Formatter.format_time(time), "Z"]
+    |> IO.chardata_to_string()
   end
 
   defp iso8601_format_local({{year, month, day}, {hour, minute, second, millisecond}}) do
