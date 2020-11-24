@@ -15,7 +15,6 @@ defmodule Logger.Backend.Humio do
   @default_flush_interval_ms 2_000
   @default_debug_io_device :stdio
   @default_print_config false
-  @default_reset_config false
 
   # sensitive keys we don't want to log
   @sensitive_config_keys [:host, :token]
@@ -23,6 +22,22 @@ defmodule Logger.Backend.Humio do
   # used primarily for testing
   @default_client Client.Tesla
   @default_ingest_api IngestApi.Structured
+
+  @default_config_map %{
+    ingest_api: @default_ingest_api,
+    client: @default_client,
+    level: @default_level,
+    metadata: @default_metadata,
+    max_batch_size: @default_max_batch_size,
+    flush_interval_ms: @default_flush_interval_ms,
+    debug_io_device: @default_debug_io_device,
+    fields: %{},
+    tags: %{},
+    host: "",
+    token: "",
+    name: "",
+    print_config: @default_print_config
+  }
 
   @type log_event :: %{
           level: atom(),
@@ -208,30 +223,20 @@ defmodule Logger.Backend.Humio do
   end
 
   defp configure(name, opts) do
-    IO.inspect(opts, label: "THIS IS THE OPTS")
     env = Application.get_env(:logger, name, [])
     IO.inspect(env, label: "THIS IS THE ENV")
     opts = Keyword.merge(env, opts)
+    IO.inspect(opts, label: "THIS IS THE OPTS")
     Application.put_env(:logger, name, opts)
 
-    # new_params = Enum.map(opts, fn x -> end)
-    config = [
-      ingest_api: Keyword.get(opts, :ingest_api, @default_ingest_api),
-      client: Keyword.get(opts, :client, @default_client),
-      level: Keyword.get(opts, :level, @default_level),
-      metadata: Keyword.get(opts, :metadata, @default_metadata),
-      format: opts |> Keyword.get(:format, nil) |> Formatter.compile(),
-      max_batch_size: Keyword.get(opts, :max_batch_size, @default_max_batch_size),
-      flush_interval_ms: Keyword.get(opts, :flush_interval_ms, @default_flush_interval_ms),
-      debug_io_device: Keyword.get(opts, :debug_io_device, @default_debug_io_device),
-      iso8601_format_fun: TimeFormat.iso8601_format_fun(),
-      fields: Keyword.get(opts, :fields, %{}),
-      tags: Keyword.get(opts, :tags, %{}),
-      host: Keyword.get(opts, :host, ""),
-      token: token(Keyword.get(opts, :token, "")),
-      name: name,
-      print_config: Keyword.get(opts, :print_config, @default_print_config)
-    ]
+    config =
+      Map.merge(@default_config_map, Enum.into(opts, %{}))
+      |> Map.put(:iso8601_format_fun, TimeFormat.iso8601_format_fun())
+      |> Map.put(:format, opts |> Keyword.get(:format, nil) |> Formatter.compile())
+      |> Enum.into([])
+
+    IO.inspect(config, label: "NEW CONFIG")
+    IO.inspect(config[:print_config], label: "TRUE OR FALSE")
 
     if config[:print_config] == true do
       Logger.info(
