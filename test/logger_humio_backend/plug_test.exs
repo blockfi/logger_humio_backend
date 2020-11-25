@@ -4,12 +4,9 @@ defmodule Logger.Backend.Humio.PlugTest do
 
   import Mox
 
-  alias Logger.Backend.Humio.{Client, IngestApi, Plug}
+  alias Logger.Backend.Humio.{Client, ConfigHelpers, Plug}
 
   require Logger
-
-  @backend {Logger.Backend.Humio, :test}
-  Logger.add_backend(@backend)
 
   @happy_result {:ok, %{status: 200, body: "somebody"}}
 
@@ -23,9 +20,8 @@ defmodule Logger.Backend.Humio.PlugTest do
       @happy_result
     end)
 
-    config(
+    ConfigHelpers.configure(
       client: Client.Mock,
-      ingest_api: IngestApi.Structured,
       format: "[$level] $message\n",
       max_batch_size: 1,
       metadata: [:conn]
@@ -146,9 +142,5 @@ defmodule Logger.Backend.Humio.PlugTest do
 
   defp call(conn, opts) do
     Plug.call(conn, Plug.init(opts))
-  end
-
-  defp config(opts) do
-    :ok = Logger.configure_backend(@backend, opts)
   end
 end

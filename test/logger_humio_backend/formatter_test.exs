@@ -3,12 +3,9 @@ defmodule Logger.Backend.Humio.FormatterTest do
 
   import Mox
 
-  alias Logger.Backend.Humio.{Client, IngestApi}
+  alias Logger.Backend.Humio.{Client, ConfigHelpers}
 
   require Logger
-
-  @backend {Logger.Backend.Humio, :test}
-  Logger.add_backend(@backend)
 
   @base_url "humio.url"
   @token "token"
@@ -24,15 +21,11 @@ defmodule Logger.Backend.Humio.FormatterTest do
       @happy_result
     end)
 
-    config(
+    ConfigHelpers.configure(
       client: Client.Mock,
-      ingest_api: IngestApi.Structured,
       host: @base_url,
       token: @token,
-      # use default format
-      format: nil,
-      max_batch_size: 1,
-      metadata: []
+      max_batch_size: 1
     )
 
     {:ok, %{ref: ref}}
@@ -50,9 +43,5 @@ defmodule Logger.Backend.Humio.FormatterTest do
     assert decoded_message =~ "[info]"
     assert decoded_message =~ self() |> :erlang.pid_to_list() |> (&"[#{&1}]").()
     verify!()
-  end
-
-  defp config(opts) do
-    :ok = Logger.configure_backend(@backend, opts)
   end
 end

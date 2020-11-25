@@ -191,7 +191,7 @@ defmodule Logger.Backend.Humio do
     IO.puts(io_device, [level, ": ", message])
   end
 
-  def default_config() do
+  def default_config do
     [
       # used primarily for testing
       client: Client.Tesla,
