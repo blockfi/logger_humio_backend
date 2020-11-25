@@ -6,38 +6,13 @@ defmodule Logger.Backend.Humio.Test do
 
   import Mox
 
-  alias Logger.Backend.Humio.IngestApi
+  alias Logger.Backend.Humio.{ConfigHelpers, IngestApi}
 
   require Logger
-
-  @backend {Logger.Backend.Humio, :test}
-  Logger.add_backend(@backend)
 
   @happy_result {:ok, %{status: 200, body: "somebody"}}
 
   ### Setup Functions
-
-  defp smoke_test_config(_context) do
-    set_mox_global()
-    parent = self()
-    ref = make_ref()
-
-    expect(IngestApi.Mock, :transmit, fn state ->
-      send(parent, {ref, state})
-      @happy_result
-    end)
-
-    config(
-      ingest_api: IngestApi.Mock,
-      host: "humio.url",
-      format: "[$level] $message\n",
-      token: "humio-token",
-      max_batch_size: 1
-    )
-
-    {:ok, %{ref: ref}}
-  end
-
   defp batch_test_config(_context) do
     set_mox_global()
     parent = self()
@@ -48,7 +23,7 @@ defmodule Logger.Backend.Humio.Test do
       @happy_result
     end)
 
-    config(
+    ConfigHelpers.configure(
       ingest_api: IngestApi.Mock,
       host: "humio.url",
       format: "[$level] $message\n",
@@ -66,7 +41,7 @@ defmodule Logger.Backend.Humio.Test do
 
     set_mox_global()
 
-    config(
+    ConfigHelpers.configure(
       ingest_api: IngestApi.Mock,
       host: "humio.url",
       format: "$message",
@@ -81,33 +56,77 @@ defmodule Logger.Backend.Humio.Test do
   ### Tests
 
   describe "smoke tests" do
-    setup [:smoke_test_config]
-
     test "default logger level is `:debug`" do
       assert Logger.level() == :debug
     end
 
-    test "does not log when level is under minimum Logger level", %{ref: ref} do
-      config(level: :info)
+    test "does not log when level is under minimum Logger level" do
+      set_mox_global()
+      parent = self()
+      ref = make_ref()
+
+      expect(IngestApi.Mock, :transmit, fn state ->
+        send(parent, {ref, state})
+        @happy_result
+      end)
+
+      ConfigHelpers.configure(level: :info, ingest_api: IngestApi.Mock)
       Logger.debug("do not log me")
       refute_receive {^ref, %{}}
     end
 
-    test "does log when level is above or equal minimum Logger level", %{ref: ref} do
-      config(level: :info)
+    test "does log when level is above or equal minimum Logger level" do
+      set_mox_global()
+      parent = self()
+      ref = make_ref()
+
+      expect(IngestApi.Mock, :transmit, fn state ->
+        send(parent, {ref, state})
+        @happy_result
+      end)
+
+      ConfigHelpers.configure(level: :info, max_batch_size: 1, ingest_api: IngestApi.Mock)
       Logger.warn("you will log me")
       assert_receive {^ref, %{}}
     end
 
-    test "can configure format", %{ref: ref} do
-      config(format: "$message ($level)\n")
+    test "can configure format" do
+      set_mox_global()
+      parent = self()
+      ref = make_ref()
+
+      expect(IngestApi.Mock, :transmit, fn state ->
+        send(parent, {ref, state})
+        @happy_result
+      end)
+
+      ConfigHelpers.configure(
+        metadata: [:user_id, :auth],
+        max_batch_size: 1,
+        ingest_api: IngestApi.Mock,
+        format: "$message ($level)\n"
+      )
+
       Logger.info("I am formatted")
       assert_receive {^ref, %{config: %{format: [:message, " (", :level, ")\n"]}}}
       verify!()
     end
 
-    test "can configure metadata", %{ref: ref} do
-      config(metadata: [:user_id, :auth])
+    test "can configure metadata" do
+      set_mox_global()
+      parent = self()
+      ref = make_ref()
+
+      expect(IngestApi.Mock, :transmit, fn state ->
+        send(parent, {ref, state})
+        @happy_result
+      end)
+
+      ConfigHelpers.configure(
+        metadata: [:user_id, :auth],
+        max_batch_size: 1,
+        ingest_api: IngestApi.Mock
+      )
 
       Logger.info("hello")
       assert_receive {^ref, %{config: %{metadata: [:user_id, :auth]}}}
@@ -314,7 +333,7 @@ defmodule Logger.Backend.Humio.Test do
         unhappy_result
       end)
 
-      config(
+      ConfigHelpers.configure(
         ingest_api: IngestApi.Mock,
         host: "humio.url",
         token: "humio-token",
@@ -354,7 +373,7 @@ defmodule Logger.Backend.Humio.Test do
         unhappy_result
       end)
 
-      config(
+      ConfigHelpers.configure(
         ingest_api: IngestApi.Mock,
         host: "humio.url",
         token: "humio-token",
@@ -377,9 +396,5 @@ defmodule Logger.Backend.Humio.Test do
       assert error_output =~ reason
       verify!()
     end
-  end
-
-  defp config(opts) do
-    :ok = Logger.configure_backend(@backend, opts)
   end
 end

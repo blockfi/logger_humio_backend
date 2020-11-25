@@ -3,12 +3,9 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
 
   import Mox
 
-  alias Logger.Backend.Humio.{Client, IngestApi, TestStruct}
+  alias Logger.Backend.Humio.{Client, ConfigHelpers, TestStruct}
 
   require Logger
-
-  @backend {Logger.Backend.Humio, :test}
-  Logger.add_backend(@backend)
 
   @base_url "humio.url"
   @token "token"
@@ -33,8 +30,7 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
       @happy_result
     end)
 
-    config(
-      ingest_api: IngestApi.Structured,
+    ConfigHelpers.configure(
       client: Client.Mock,
       host: @base_url,
       format: "$message",
@@ -138,9 +134,5 @@ defmodule Logger.Humio.Backend.IngestApi.StructuredTest do
                }
              ] = Jason.decode!(body)
     end
-  end
-
-  defp config(opts) do
-    :ok = Logger.configure_backend(@backend, opts)
   end
 end

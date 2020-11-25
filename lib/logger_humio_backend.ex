@@ -8,17 +8,6 @@ defmodule Logger.Backend.Humio do
 
   require Logger
 
-  # "advertised" options
-  @default_level :debug
-  @default_metadata []
-  @default_max_batch_size 20
-  @default_flush_interval_ms 2_000
-  @default_debug_io_device :stdio
-
-  # used primarily for testing
-  @default_client Client.Tesla
-  @default_ingest_api IngestApi.Structured
-
   @type log_event :: %{
           level: atom(),
           message: String.t(),
@@ -202,43 +191,41 @@ defmodule Logger.Backend.Humio do
     IO.puts(io_device, [level, ": ", message])
   end
 
+  def default_config do
+    [
+      # used primarily for testing
+      client: Client.Tesla,
+      ingest_api: IngestApi.Structured,
+      iso8601_format_fun: TimeFormat.iso8601_format_fun(),
+      # "advertised" options
+      host: "",
+      token: "",
+      level: :debug,
+      metadata: [],
+      format: nil,
+      max_batch_size: 20,
+      flush_interval_ms: 2_000,
+      debug_io_device: :stdio,
+      fields: %{},
+      tags: %{}
+    ]
+  end
+
   defp configure(name, opts) do
     env = Application.get_env(:logger, name, [])
     opts = Keyword.merge(env, opts)
     Application.put_env(:logger, name, opts)
 
-    host = Keyword.get(opts, :host, "")
-    token = token(Keyword.get(opts, :token, ""))
-
-    ingest_api = Keyword.get(opts, :ingest_api, @default_ingest_api)
-    client = Keyword.get(opts, :client, @default_client)
-    level = Keyword.get(opts, :level, @default_level)
-    metadata = Keyword.get(opts, :metadata, @default_metadata)
-    format = opts |> Keyword.get(:format, nil) |> Formatter.compile()
-    max_batch_size = Keyword.get(opts, :max_batch_size, @default_max_batch_size)
-    flush_interval_ms = Keyword.get(opts, :flush_interval_ms, @default_flush_interval_ms)
-    debug_io_device = Keyword.get(opts, :debug_io_device, @default_debug_io_device)
-    iso8601_format_fun = TimeFormat.iso8601_format_fun()
-    fields = Keyword.get(opts, :fields, %{})
-    tags = Keyword.get(opts, :tags, %{})
+    config =
+      default_config()
+      |> Keyword.merge(opts)
+      |> Keyword.put_new(:name, name)
+      |> Keyword.update!(:format, fn format -> Formatter.compile(format) end)
+      |> Keyword.update!(:token, fn token -> token(token) end)
+      |> Enum.into(Map.new())
 
     %{
-      config: %{
-        token: token,
-        host: host,
-        name: name,
-        ingest_api: ingest_api,
-        client: client,
-        level: level,
-        format: format,
-        metadata: metadata,
-        max_batch_size: max_batch_size,
-        flush_interval_ms: flush_interval_ms,
-        debug_io_device: debug_io_device,
-        iso8601_format_fun: iso8601_format_fun,
-        fields: fields,
-        tags: tags
-      },
+      config: config,
       log_events: [],
       flush_timer: nil
     }
