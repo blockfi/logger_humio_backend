@@ -10,12 +10,15 @@ opts = Humio.Plug.init([])
 conn = conn(:get, "/")
 Logger.remove_backend(:console)
 
-Benchee.run(%{ "Logger.Backend.Humio.Plug" => fn ->
+Benchee.run(%{
+  Logger.Backend.Humio.Plug => fn ->
     conn
-      |> Humio.Plug.call(opts)
-      |> send_resp(200, "response_body")
-end,
-"Logger.Plug" => fn -> conn
-  |> Plug.Logger.call(:info)
-  |> send_resp(200, "response_body")
-end})
+    |> Humio.Plug.call(opts)
+    |> send_resp(200, "response_body")
+  end,
+  Plug.Logger => fn ->
+    conn
+    |> Plug.Logger.call(:info)
+    |> send_resp(200, "response_body")
+  end
+})
