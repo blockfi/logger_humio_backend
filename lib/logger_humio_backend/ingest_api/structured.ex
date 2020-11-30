@@ -22,21 +22,25 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
       }) do
     headers = IngestApi.generate_headers(token, @content_type)
 
-    body =
-      log_events
-      |> Enum.map(&to_event(&1, config))
-      |> to_request(tags)
-      |> Jason.encode!()
+    log_events
+    |> Enum.map(&to_event(&1, config))
+    |> to_request(tags)
+    |> Jason.encode()
+    |> case do
+      {:ok, body} ->
+        client.send(%{
+          base_url: host,
+          path: @path,
+          body: body,
+          headers: headers
+        })
 
-    client.send(%{
-      base_url: host,
-      path: @path,
-      body: body,
-      headers: headers
-    })
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
-  defp to_request(events, tags) when is_list(events) and is_map(tags) do
+  defp to_request(events, tags) do
     Map.new()
     |> Map.put_new("events", events)
     |> Map.put_new("tags", tags)
