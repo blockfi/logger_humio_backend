@@ -44,7 +44,8 @@ defmodule LoggerHumioBackend.Mixfile do
       {:mox, "~> 1.0", only: :test},
       {:plug, "~> 1.2"},
       {:tesla, "~> 1.3.0"},
-      {:timex, "~> 3.5"}
+      {:timex, "~> 3.5"},
+      {:benchee, "~> 1.0", only: :dev}
     ]
   end
 
