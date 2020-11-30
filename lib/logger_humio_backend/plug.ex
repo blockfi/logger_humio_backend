@@ -22,8 +22,7 @@ defmodule Logger.Backend.Humio.Plug do
 
     Conn.register_before_send(conn, fn conn ->
       metadata = to_metadata(conn, start, keys)
-      message = format_message(conn)
-      Logger.log(level, message, conn: metadata)
+      Logger.log(level, fn -> format_message(conn) end, conn: metadata)
       conn
     end)
   end
@@ -55,12 +54,12 @@ defmodule Logger.Backend.Humio.Plug do
   # Puts certain fields into a more legible format.
   # Separate from Metadata.format_metadata since certain fields we only see here
   defp format_metadata(metadata) do
-    Iteraptor.map(metadata, fn {k, v} ->
+    Enum.map(metadata, fn {k, v} ->
       {k, metadata(k, v)}
     end)
   end
 
-  defp metadata([:remote_ip], ip) do
+  defp metadata(:remote_ip, ip) do
     ip
     |> Tuple.to_list()
     |> Enum.join(".")
