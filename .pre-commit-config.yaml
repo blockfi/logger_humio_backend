@@ -1,0 +1,34 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+- repo: local
+  hooks:
+    - id: check-dependencies
+      name: Check for mix.lock divergences
+      always_run: true
+      pass_filenames: false
+      language: system
+      entry: "mix"
+      args: ["deps.get"]
+    - id: formatter
+      name: Format Elixir files
+      files: ".*\\.exs?"
+      language: system
+      entry: "mix"
+      args: ["format"]
+    - id: credo
+      name: Check style with Credo
+      files: ".*\\.exs?"
+      language: script
+      entry: ./support/pre-commit/credo_hook.sh
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.4.0
+  hooks:
+    - id: no-commit-to-branch
+      args: ["-b", "master", "-b", "develop"]
+    - id: check-merge-conflict
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: check-yaml
+    - id: check-added-large-files
