@@ -1,0 +1,9 @@
+version: 2
+updates:
+  - package-ecosystem: "mix"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    versioning-strategy: "auto"
+    ignore:
+      - dependency-name: "auth0"
