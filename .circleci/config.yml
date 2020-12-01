@@ -37,7 +37,7 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - logger-humio-backend
+            - logger_humio_backend
             - .mix
   check-formatted:
     <<: *defaults
