@@ -1,0 +1,155 @@
+version: 2.1
+
+defaults: &defaults
+  working_directory: ~/logger_humio_backend
+  docker:
+    - image: circleci/elixir:1.10.3
+  environment:
+    MIX_ENV: test
+    FORCE_WARNINGS_AS_ERRORS: "true"
+
+jobs:
+  build:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1.00-logger-humio-backend-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+      - run:
+          name: Install hex and rebar
+          command: mix do local.hex --force, local.rebar --force
+      - run:
+          name: Fetch dependencies
+          command: mix deps.get
+      - run:
+          name: Build dependencies
+          command: mix deps.compile
+      - run:
+          name: Compile and check warnings
+          command: mix compile --warnings-as-errors
+      - save_cache:
+          key: v1.00-logger-humio-backend-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          paths:
+            - _build
+            - deps
+            - ~/.mix
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - logger-humio-backend
+            - .mix
+  check-formatted:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Verify formatted
+          command: mix format --check-formatted --dry-run
+  credo:
+    description: "Credo style checker"
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Run credo
+          command: mix credo
+  test-and-coverage:
+    description: "Runs tests"
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Run tests and analyze coverage
+          command: mix do clean, coveralls.circle
+  dialyzer:
+    description: "Runs dialyzer"
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+      - restore_cache:
+          keys:
+            - v1.00-logger-humio-backend-plt-cache-{{ checksum "mix.lock" }}
+            - v1.00-logger-humio-backend-plt-cache
+      - run: mix dialyzer --plt
+      - save_cache:
+          key: v1.00-logger-humio-backend-plt-cache-{{ checksum "mix.lock" }}
+          paths:
+            - _build
+            - ~/.mix
+      - run:
+          name: Run dialyzer
+          command: mix dialyzer
+  dependency-audit:
+    description: "Runs dependencies audit"
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Run dependencies audit
+          command: mix deps.audit
+
+#
+# WORKFLOWS START HERE
+#
+## commit workflow ##
+#    build
+#      |
+#      |--------- check-formatted
+#      |
+#      |--------- credo
+#      |
+#      ---------- test-and-coverage
+#      |
+#      |--------- dialyzer
+#      |
+#      |--------- dependency-audit
+#
+workflows:
+  commit-workflow:
+    jobs:
+      - build:
+          context: blockfi_global
+          filters:
+            tags:
+              ignore: /^v.*/
+      - check-formatted:
+          context: blockfi_global
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - build
+      - credo:
+          context: blockfi_global
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - build
+      - test-and-coverage:
+          context: blockfi_global
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - build
+      - dialyzer:
+          context: blockfi_global
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - build
+      - dependency-audit:
+          context: blockfi_global
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - build
