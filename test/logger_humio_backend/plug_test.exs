@@ -141,7 +141,7 @@ defmodule Logger.Backend.Humio.PlugTest do
 
     test "formats the remote IP correctly for v6 addresses", %{ref: ref} do
       conn(:get, "/")
-      |> Map.put(:remote_ip, {8193, 3512, 15437, 21, 0, 0, 6703, 6699})
+      |> Map.put(:remote_ip, {8193, 3512, 15_437, 21, 0, 0, 6703, 6699})
       |> call([])
       |> send_resp(200, "response_body")
 
