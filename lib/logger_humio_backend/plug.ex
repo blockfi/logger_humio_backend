@@ -60,9 +60,10 @@ defmodule Logger.Backend.Humio.Plug do
   end
 
   defp metadata(:remote_ip, ip) do
-    ip
-    |> Tuple.to_list()
-    |> Enum.join(".")
+    case :inet.ntoa(ip) do
+      {:error, :einval} -> nil
+      chars -> to_string(chars)
+    end
   end
 
   defp metadata(_, other) do
