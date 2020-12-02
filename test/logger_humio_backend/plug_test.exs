@@ -138,6 +138,31 @@ defmodule Logger.Backend.Humio.PlugTest do
 
       assert rawstring =~ "[info] GET / Sent 200"
     end
+
+    test "formats the remote IP correctly for v6 addresses", %{ref: ref} do
+      conn(:get, "/")
+      |> Map.put(:remote_ip, {8193, 3512, 15_437, 21, 0, 0, 6703, 6699})
+      |> call([])
+      |> send_resp(200, "response_body")
+
+      assert_receive {^ref, %{body: body}}
+
+      decoded_body = Jason.decode!(body)
+
+      assert [
+               %{
+                 "events" => [
+                   %{
+                     "attributes" => %{
+                       "conn" => %{
+                         "remote_ip" => "2001:db8:3c4d:15::1a2f:1a2b"
+                       }
+                     }
+                   }
+                 ]
+               }
+             ] = decoded_body
+    end
   end
 
   defp call(conn, opts) do
