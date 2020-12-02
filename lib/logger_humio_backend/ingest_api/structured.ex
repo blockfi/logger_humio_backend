@@ -4,7 +4,7 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
     [Humio Documentation]: https://docs.humio.com/api/ingest/#structured-data
   """
   @behaviour Logger.Backend.Humio.IngestApi
-  alias Logger.Backend.Humio.{IngestApi, Metadata}
+  alias Logger.Backend.Humio.{IngestApi, Metadata, TimeFormat}
 
   @path "/api/v1/ingest/humio-structured"
   @content_type "application/json"
@@ -49,17 +49,16 @@ defmodule Logger.Backend.Humio.IngestApi.Structured do
 
   defp to_event(
          %{metadata: metadata, timestamp: timestamp} = log_event,
-         %{metadata: metadata_keys, iso8601_format_fun: iso8601_format_fun, fields: fields} =
-           config
+         %{metadata: metadata_keys, fields: fields} = config
        ) do
     Map.new()
     |> rawstring(log_event, config)
     |> attributes(metadata, metadata_keys, fields)
-    |> timestamp(timestamp, iso8601_format_fun)
+    |> to_iso8601(timestamp)
   end
 
-  defp timestamp(map, timestamp, iso8601_format_fun) do
-    formatted_timestamp = iso8601_format_fun.(timestamp)
+  defp to_iso8601(map, timestamp) do
+    formatted_timestamp = TimeFormat.iso8601_format_utc(timestamp)
     Map.put_new(map, "timestamp", formatted_timestamp)
   end
 

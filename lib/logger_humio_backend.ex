@@ -4,7 +4,7 @@ defmodule Logger.Backend.Humio do
   """
   @behaviour :gen_event
 
-  alias Logger.Backend.Humio.{Client, Formatter, IngestApi, TimeFormat}
+  alias Logger.Backend.Humio.{Client, Formatter, IngestApi}
 
   require Logger
 
@@ -196,7 +196,6 @@ defmodule Logger.Backend.Humio do
       # used primarily for testing
       client: Client.Tesla,
       ingest_api: IngestApi.Structured,
-      iso8601_format_fun: TimeFormat.iso8601_format_fun(),
       # "advertised" options
       host: "",
       token: "",
