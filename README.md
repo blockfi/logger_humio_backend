@@ -43,7 +43,7 @@ Logger.add_backend {Logger.Backend.Humio, :debug}
 Logger.configure {Logger.Backend.Humio, :debug},
   format: "[$level] $message\n"
   host: "https://humio-ingest.bigcorp.com:443",
-  level: :debug,
+  min_level: :debug,
   token: "ingest-token-goes-here",
 ```
 
@@ -71,7 +71,7 @@ config :logger, :humio_log,
   host: "https://humio-ingest.bigcorp.com:443/",
   token: "ingest-token-goes-here",
   format: "[$level] $message\n",
-  level: :debug,
+  min_level: :debug,
   metadata: [:request_id, :customer_id],
   max_batch_size: 50,
   flush_interval_ms: 5_000,
@@ -114,7 +114,7 @@ Will print error messages as:
 localhost[<0.349.0>]: [error] Hello
 ```
 
-The valid parameters you can use are: 
+The valid parameters you can use are:
 
 * `$application` - the name of the application from which the log was sent.
 * `$hostname` - the hostname retrieved via `:inet.gethostname/0`.
@@ -155,9 +155,9 @@ For a complete list of fields, [see the Plug.Conn documentation](https://hexdocs
 
 ```
   pipeline :instrumentation do
-    plug Humio.Plug, 
+    plug Humio.Plug,
       [
-        log: :debug, 
+        log: :debug,
         metadata: [:method, :response_time_us, :port, :host]
       ]
   end

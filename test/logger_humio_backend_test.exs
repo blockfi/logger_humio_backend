@@ -70,7 +70,7 @@ defmodule Logger.Backend.Humio.Test do
         @happy_result
       end)
 
-      ConfigHelpers.configure(level: :info, ingest_api: IngestApi.Mock)
+      ConfigHelpers.configure(min_level: :info, ingest_api: IngestApi.Mock)
       Logger.debug("do not log me")
       refute_receive {^ref, %{}}
     end
@@ -85,7 +85,7 @@ defmodule Logger.Backend.Humio.Test do
         @happy_result
       end)
 
-      ConfigHelpers.configure(level: :info, max_batch_size: 1, ingest_api: IngestApi.Mock)
+      ConfigHelpers.configure(min_level: :info, max_batch_size: 1, ingest_api: IngestApi.Mock)
       Logger.warn("you will log me")
       assert_receive {^ref, %{}}
     end

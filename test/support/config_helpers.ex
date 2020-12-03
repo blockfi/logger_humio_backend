@@ -5,11 +5,9 @@ defmodule Logger.Backend.Humio.ConfigHelpers do
 
   alias Logger.Backend.Humio
 
-  @backend {Logger.Backend.Humio, :test}
-
   def configure(opts) do
-    Logger.add_backend(@backend)
+    Logger.add_backend(Logger.Backend.Humio)
     opts = Keyword.merge(Humio.default_config(), opts)
-    :ok = Logger.configure_backend(@backend, opts)
+    :ok = Logger.configure_backend(Logger.Backend.Humio, opts)
   end
 end
