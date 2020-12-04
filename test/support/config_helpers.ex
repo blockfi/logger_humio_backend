@@ -4,10 +4,32 @@ defmodule Logger.Backend.Humio.ConfigHelpers do
   """
 
   alias Logger.Backend.Humio
+  alias Logger.Backend.Humio.Client
+
+  # Sensible test defaults
+  @default_overrides [
+    host: "host",
+    token: "token",
+    format: "$message",
+    client: Client.Mock,
+    max_batch_size: 1,
+    flush_interval_ms: 500,
+    fields: %{
+      "example_field" => "example_value"
+    },
+    tags: %{
+      "example_tag" => "example_value"
+    }
+  ]
 
   def configure(opts) do
-    Logger.add_backend(Logger.Backend.Humio)
-    opts = Keyword.merge(Humio.default_config(), opts)
-    :ok = Logger.configure_backend(Logger.Backend.Humio, opts)
+    Logger.add_backend(Humio, flush: true)
+
+    opts =
+      Humio.default_config()
+      |> Keyword.merge(@default_overrides)
+      |> Keyword.merge(opts)
+
+    :ok = Logger.configure_backend(Humio, opts)
   end
 end

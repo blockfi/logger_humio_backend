@@ -4,19 +4,19 @@ defmodule Logger.Backend.Humio do
   """
   @behaviour :gen_event
 
-  alias Logger.Backend.Humio.{Client, Formatter, IngestApi}
+  alias Logger.Backend.Humio.{Client, Formatter, Metadata, TimeFormat}
 
   require Logger
 
+  @path "/api/v1/ingest/humio-structured"
+  @content_type "application/json"
   @default_config [
     client: Client.Tesla,
-    ingest_api: IngestApi.Structured,
-    # "advertised" options
     host: "",
     token: "",
     min_level: :debug,
     metadata: [],
-    format: Formatter.compile(nil),
+    format: nil,
     max_batch_size: 20,
     flush_interval_ms: 2_000,
     debug_io_device: :stdio,
@@ -37,7 +37,6 @@ defmodule Logger.Backend.Humio do
           flush_timer: reference() | nil,
           token: String.t(),
           host: String.t(),
-          ingest_api: IngestApi,
           client: Client,
           min_level: Logger.level(),
           format: any(),
@@ -153,13 +152,12 @@ defmodule Logger.Backend.Humio do
   defp send_events(
          %__MODULE__{
            log_events: log_events,
-           debug_io_device: debug_io_device,
-           ingest_api: ingest_api
+           debug_io_device: debug_io_device
          } = state
        ) do
     state
     |> Map.update!(:log_events, &Enum.reverse(&1))
-    |> ingest_api.transmit()
+    |> transmit()
     |> case do
       {:ok, %{status: status, body: body}} when status not in 200..299 ->
         log(
@@ -193,14 +191,15 @@ defmodule Logger.Backend.Humio do
     IO.puts(io_device, [level, ": ", message])
   end
 
-  def default_config(), do: @default_config
+  def default_config, do: @default_config
 
-  @spec configure(Keyword.t(), t) :: t
+  @spec configure(Keyword.t(), t()) :: t()
   defp configure(opts, state) do
     updates = [
+      client: Keyword.get(opts, :client, state.client),
       host: Keyword.get(opts, :host, state.host),
       token: Keyword.get(opts, :token, state.token),
-      min_level: Keyword.get(opts, :min_level, state.level),
+      min_level: Keyword.get(opts, :min_level, state.min_level),
       metadata: Keyword.get(opts, :metadata, state.metadata),
       format: opts |> Keyword.get(:format, nil) |> Formatter.compile(),
       max_batch_size: Keyword.get(opts, :max_batch_size, state.max_batch_size),
@@ -211,5 +210,92 @@ defmodule Logger.Backend.Humio do
     ]
 
     struct!(state, updates)
+  end
+
+  def transmit(
+        %__MODULE__{
+          host: host,
+          token: token,
+          client: client,
+          tags: tags
+        } = state
+      ) do
+    headers = generate_headers(token, @content_type)
+
+    to_events(state)
+    |> to_request(tags)
+    |> Jason.encode()
+    |> case do
+      {:ok, body} ->
+        client.send(%{
+          base_url: host,
+          path: @path,
+          body: body,
+          headers: headers
+        })
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp to_request(events, tags) do
+    Map.new()
+    |> Map.put_new("events", events)
+    |> add_tags(tags)
+    |> List.wrap()
+  end
+
+  def add_tags(map, tags) when tags == %{} do
+    map
+  end
+
+  def add_tags(map, tags) do
+    Map.put_new(map, "tags", tags)
+  end
+
+  defp to_events(%__MODULE__{log_events: log_events} = state) do
+    log_events
+    |> Enum.map(&to_event(&1, state))
+  end
+
+  defp to_event(
+         %{metadata: metadata, timestamp: timestamp} = log_event,
+         %__MODULE__{metadata: metadata_keys, fields: fields} = state
+       ) do
+    formatted_timestamp = TimeFormat.iso8601_format_utc(timestamp)
+    rawstring = format_message(log_event, state)
+    metadata_map = metadata |> Metadata.metadata_to_map(metadata_keys)
+    attributes = Map.merge(fields, metadata_map)
+
+    Map.new()
+    |> Map.put_new("rawstring", rawstring)
+    |> add_attributes(attributes)
+    |> Map.put_new("timestamp", formatted_timestamp)
+  end
+
+  defp add_attributes(map, attributes) when attributes == %{} do
+    map
+  end
+
+  defp add_attributes(map, attributes) do
+    Map.put_new(map, "attributes", attributes)
+  end
+
+  def generate_headers(token, content_type) do
+    [
+      {"Authorization", "Bearer " <> token},
+      {"Content-Type", content_type}
+    ]
+  end
+
+  def format_message(
+        %{message: msg, level: level, timestamp: ts, metadata: md},
+        %__MODULE__{format: format}
+      ) do
+    format
+    |> Formatter.format(level, msg, ts, md)
+    |> IO.chardata_to_string()
+    |> String.trim()
   end
 end
