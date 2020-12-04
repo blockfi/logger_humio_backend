@@ -25,9 +25,8 @@ Then run mix deps.get to install it.
 
 ### Optional
 * **format**: `String.t()`. The logging format of the message. [default: `$hostname[$pid]: [$level]$levelpad $message`].
-* **level**: `atom()`. Minimum level for this backend. [default: `:debug`]
+* **min_level**: `atom()`. Minimum level for this backend. [default: `:debug`]
 * **metadata**: `list() | :all | {:except, list()}`. Specifies the metadata to be sent to Humio. If a list, sends all the metadata with keys in the list. `:all` sends all metadata. The tuple of `:except` and a list specifies that all metadata except for the keys in the list should be sent. [default: `[]`]
-* **client**: `Logger.Humio.Backend.Client`.  Client used to send messages to Humio.  [default: `Logger.Humio.Backend.Client.Tesla`]
 * **max_batch_size**: `pos_integer()`. Maximum number of logs that the library will batch before sending them to Humio.  [default: `20`]
 * **flush_interval_ms**: `pos_integer()`.  Maximum number of milliseconds that ellapses between flushes to Humio. [default: `2_000`]
 * **debug_io_device**: `pid()`, `:stdio`, or `:stderr`. The IO device to which error messages are sent if sending logs to Humio fails for any reason. [default: `:stdio`]
@@ -41,10 +40,10 @@ Then run mix deps.get to install it.
 ```elixir
 Logger.add_backend {Logger.Backend.Humio, :debug}
 Logger.configure {Logger.Backend.Humio, :debug},
-  format: "[$level] $message\n"
+  format: "[$level] $message\n",
   host: "https://humio-ingest.bigcorp.com:443",
-  min_level: :debug,
   token: "ingest-token-goes-here",
+  min_level: :debug
 ```
 
 #### Application config
@@ -54,7 +53,7 @@ Logger.configure {Logger.Backend.Humio, :debug},
 ```elixir
 config :logger,
   utc_log: true #recommended
-  backends: [{Logger.Backend.Humio, :humio_log}, :console]
+  backends: [Logger.Backend.Humio, :console]
 
 config :logger, :humio_log,
   host: "https://humio-ingest.bigcorp.com:443/",

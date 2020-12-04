@@ -32,6 +32,7 @@ defmodule Logger.Backend.Humio do
           timestamp: any(),
           metadata: keyword()
         }
+
   @type t :: %__MODULE__{
           log_events: [log_event] | [],
           flush_timer: reference() | nil,
