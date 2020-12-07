@@ -219,14 +219,13 @@ defmodule Logger.Backend.Humio do
          %__MODULE__{
            host: host,
            token: token,
-           client: client,
-           tags: tags
+           client: client
          } = state
        ) do
     headers = generate_headers(token, @content_type)
 
-    to_events(state)
-    |> to_request(tags)
+    state
+    |> to_request()
     |> Jason.encode()
     |> case do
       {:ok, body} ->
@@ -242,7 +241,9 @@ defmodule Logger.Backend.Humio do
     end
   end
 
-  defp to_request(events, tags) do
+  defp to_request(%__MODULE__{tags: tags} = state) do
+    events = to_events(state)
+
     Map.new()
     |> Map.put_new("events", events)
     |> add_tags(tags)
