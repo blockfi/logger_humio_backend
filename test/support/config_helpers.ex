@@ -46,7 +46,7 @@ defmodule Logger.Backend.Humio.ConfigHelpers do
       result
     end)
 
-    Logger.add_backend(Humio, flush: true)
+    _ = Logger.add_backend(Humio, flush: true)
 
     opts =
       Humio.default_config()

@@ -1,6 +1,8 @@
 LoggerHumioBackend
 =======================
 
+[![Coverage Status](https://coveralls.io/repos/github/blockfi/logger_humio_backend/badge.svg)](https://coveralls.io/github/blockfi/logger_humio_backend)
+
 ## About
 
 A [Elixir Logger](http://elixir-lang.org/docs/v1.0/logger/Logger.html) backend for [Humio](https://www.humio.com/).
