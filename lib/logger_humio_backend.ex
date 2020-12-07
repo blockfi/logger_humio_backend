@@ -259,8 +259,7 @@ defmodule Logger.Backend.Humio do
   end
 
   defp to_events(%__MODULE__{log_events: log_events} = state) do
-    log_events
-    |> Enum.map(&to_event(&1, state))
+    Enum.map(log_events, &to_event(&1, state))
   end
 
   defp to_event(
@@ -272,10 +271,10 @@ defmodule Logger.Backend.Humio do
     metadata_map = metadata |> Metadata.metadata_to_map(metadata_keys)
     attributes = Map.merge(fields, metadata_map)
 
-    Map.new()
-    |> Map.put_new("rawstring", rawstring)
-    |> add_attributes(attributes)
-    |> Map.put_new("timestamp", formatted_timestamp)
+    add_attributes(
+      %{"rawstring" => rawstring, "timestamp" => formatted_timestamp},
+      attributes
+    )
   end
 
   defp add_attributes(map, attributes) when attributes == %{} do
