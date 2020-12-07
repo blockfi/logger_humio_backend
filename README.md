@@ -38,12 +38,13 @@ Then run mix deps.get to install it.
 #### Runtime
 
 ```elixir
-Logger.add_backend {Logger.Backend.Humio, :debug}
-Logger.configure {Logger.Backend.Humio, :debug},
+Logger.add_backend(Logger.Backend.Humio)
+Logger.configure(Logger.Backend.Humio,
   format: "[$level] $message\n",
   host: "https://humio-ingest.bigcorp.com:443",
   token: "ingest-token-goes-here",
   min_level: :debug
+)
 ```
 
 #### Application config
@@ -53,9 +54,9 @@ Logger.configure {Logger.Backend.Humio, :debug},
 ```elixir
 config :logger,
   utc_log: true #recommended
-  backends: [Logger.Backend.Humio, :console]
+  backends: [Logger.Backend.Humio]
 
-config :logger, :humio_log,
+config :logger_humio_backend
   host: "https://humio-ingest.bigcorp.com:443/",
   token: "ingest-token-goes-here",
 ```
@@ -64,9 +65,9 @@ config :logger, :humio_log,
 ```elixir
 config :logger,
   utc_log: true #recommended
-  backends: [{Logger.Backend.Humio, :humio_log}, :console]
+  backends: [Logger.Backend.Humio]
 
-config :logger, :humio_log,
+config :logger_humio_backend,
   host: "https://humio-ingest.bigcorp.com:443/",
   token: "ingest-token-goes-here",
   format: "[$level] $message\n",

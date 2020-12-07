@@ -196,21 +196,20 @@ defmodule Logger.Backend.Humio do
 
   @spec configure(Keyword.t(), t()) :: t()
   defp configure(opts, state) do
-    updates = [
-      client: Keyword.get(opts, :client, state.client),
-      host: Keyword.get(opts, :host, state.host),
-      token: Keyword.get(opts, :token, state.token),
-      min_level: Keyword.get(opts, :min_level, state.min_level),
-      metadata: Keyword.get(opts, :metadata, state.metadata),
-      format: opts |> Keyword.get(:format, nil) |> Formatter.compile(),
-      max_batch_size: Keyword.get(opts, :max_batch_size, state.max_batch_size),
-      flush_interval_ms: Keyword.get(opts, :flush_interval_ms, state.flush_interval_ms),
-      debug_io_device: Keyword.get(opts, :debug_io_device, state.debug_io_device),
-      fields: Keyword.get(opts, :fields, state.fields),
-      tags: Keyword.get(opts, :tags, state.tags)
-    ]
+    updates =
+      Application.get_all_env(:logger_humio_backend)
+      |> Keyword.merge(opts)
 
     struct!(state, updates)
+    |> compile_format()
+  end
+
+  defp compile_format(%__MODULE__{format: format} = state) when is_binary(format) do
+    %{state | format: Formatter.compile(format)}
+  end
+
+  defp compile_format(state) do
+    state
   end
 
   def transmit(
