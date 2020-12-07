@@ -264,10 +264,10 @@ defmodule Logger.Backend.Humio do
 
   defp to_event(
          %{metadata: metadata, timestamp: timestamp} = log_event,
-         %__MODULE__{metadata: metadata_keys, fields: fields} = state
+         %__MODULE__{metadata: metadata_keys, fields: fields, format: format}
        ) do
     formatted_timestamp = TimeFormat.iso8601_format_utc(timestamp)
-    rawstring = format_message(log_event, state)
+    rawstring = format_message(log_event, format)
     metadata_map = metadata |> Metadata.metadata_to_map(metadata_keys)
     attributes = Map.merge(fields, metadata_map)
 
@@ -292,10 +292,7 @@ defmodule Logger.Backend.Humio do
     ]
   end
 
-  defp format_message(
-         %{message: msg, level: level, timestamp: ts, metadata: md},
-         %__MODULE__{format: format}
-       ) do
+  defp format_message(%{message: msg, level: level, timestamp: ts, metadata: md}, format) do
     format
     |> Formatter.format(level, msg, ts, md)
     |> IO.chardata_to_string()
