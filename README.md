@@ -27,7 +27,7 @@ Then run mix deps.get to install it.
 
 ### Optional
 * **format**: `String.t()`. The logging format of the message. [default: `$hostname[$pid]: [$level]$levelpad $message`].
-* **min_level**: `atom()`. Minimum level for this backend. [default: `:debug`]
+* **level**: `atom()`. Minimum level for this backend. [default: `:debug`]
 * **metadata**: `list() | :all | {:except, list()}`. Specifies the metadata to be sent to Humio. If a list, sends all the metadata with keys in the list. `:all` sends all metadata. The tuple of `:except` and a list specifies that all metadata except for the keys in the list should be sent. [default: `[]`]
 * **max_batch_size**: `pos_integer()`. Maximum number of logs that the library will batch before sending them to Humio.  [default: `20`]
 * **flush_interval_ms**: `pos_integer()`.  Maximum number of milliseconds that ellapses between flushes to Humio. [default: `2_000`]
@@ -45,7 +45,7 @@ Logger.configure(Logger.Backend.Humio,
   format: "[$level] $message\n",
   host: "https://humio-ingest.bigcorp.com:443",
   token: "ingest-token-goes-here",
-  min_level: :debug
+  level: :debug
 )
 ```
 
@@ -73,7 +73,7 @@ config :logger_humio_backend,
   host: "https://humio-ingest.bigcorp.com:443/",
   token: "ingest-token-goes-here",
   format: "[$level] $message\n",
-  min_level: :debug,
+  level: :debug,
   metadata: [:request_id, :customer_id],
   max_batch_size: 50,
   flush_interval_ms: 5_000,

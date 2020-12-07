@@ -35,13 +35,13 @@ defmodule Logger.Backend.Humio.Test do
     end
 
     test "does not log when level is under minimum Logger level" do
-      {:ok, %{ref: ref}} = ConfigHelpers.configure(0, min_level: :info)
+      {:ok, %{ref: ref}} = ConfigHelpers.configure(0, level: :info)
       Logger.debug("do not log me")
       refute_receive {^ref, %{}}
     end
 
     test "does log when level is above or equal minimum Logger level" do
-      {:ok, %{ref: ref}} = ConfigHelpers.configure(min_level: :info)
+      {:ok, %{ref: ref}} = ConfigHelpers.configure(level: :info)
       Logger.warn("you will log me")
       assert_receive {^ref, %{}}
     end

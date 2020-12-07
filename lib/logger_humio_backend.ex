@@ -14,7 +14,7 @@ defmodule Logger.Backend.Humio do
     client: Client.Tesla,
     host: "",
     token: "",
-    min_level: :debug,
+    level: :debug,
     metadata: [],
     format: nil,
     max_batch_size: 20,
@@ -39,7 +39,7 @@ defmodule Logger.Backend.Humio do
           token: String.t(),
           host: String.t(),
           client: module(),
-          min_level: Logger.level(),
+          level: Logger.level(),
           format: any(),
           metadata: keyword() | :all | {:except, keyword()},
           max_batch_size: pos_integer(),
@@ -73,8 +73,11 @@ defmodule Logger.Backend.Humio do
     {:ok, state}
   end
 
-  def handle_event({level, _group_leader, {Logger, msg, ts, md}}, state) do
-    if is_nil(state.min_level) or Logger.compare_levels(level, state.min_level) != :lt do
+  def handle_event(
+        {level, _group_leader, {Logger, msg, ts, md}},
+        %__MODULE__{level: min_level} = state
+      ) do
+    if is_nil(min_level) or Logger.compare_levels(level, min_level) != :lt do
       add_to_batch(
         %{
           level: level,
