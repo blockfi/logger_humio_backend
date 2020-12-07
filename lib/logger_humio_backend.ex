@@ -38,13 +38,13 @@ defmodule Logger.Backend.Humio do
           flush_timer: reference() | nil,
           token: String.t(),
           host: String.t(),
-          client: Client,
+          client: module(),
           min_level: Logger.level(),
           format: any(),
           metadata: keyword() | :all | {:except, keyword()},
           max_batch_size: pos_integer(),
           flush_interval_ms: pos_integer(),
-          debug_io_device: atom() | pid(),
+          debug_io_device: :stdio | :stderr | pid(),
           fields: map(),
           tags: map()
         }
@@ -52,14 +52,14 @@ defmodule Logger.Backend.Humio do
   #### :gen_event implementation
 
   @impl true
-  @spec init(__MODULE__) :: {:ok, t}
+  @spec init(__MODULE__) :: {:ok, t()}
   def init(__MODULE__) do
     init_state = configure([], %__MODULE__{})
     {:ok, init_state}
   end
 
   @impl true
-  @spec handle_call({:configure, Keyword.t()}, t) :: {:ok, :ok, t}
+  @spec handle_call({:configure, Keyword.t()}, t()) :: {:ok, :ok, t()}
   def handle_call({:configure, opts}, state) do
     {:ok, :ok, configure(opts, state)}
   end
@@ -129,7 +129,7 @@ defmodule Logger.Backend.Humio do
   defp cancel_timer(%__MODULE__{flush_timer: timer} = state) when is_nil(timer), do: state
 
   defp cancel_timer(%__MODULE__{flush_timer: timer} = state) do
-    :erlang.cancel_timer(timer)
+    _ = :erlang.cancel_timer(timer)
     %{state | flush_timer: nil}
   end
 
@@ -194,7 +194,7 @@ defmodule Logger.Backend.Humio do
 
   def default_config, do: @default_config
 
-  @spec configure(Keyword.t(), t()) :: t()
+  @spec configure(keyword(), t()) :: t()
   defp configure(opts, state) do
     updates =
       Application.get_all_env(:logger_humio_backend)

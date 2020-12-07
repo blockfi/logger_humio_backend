@@ -64,7 +64,7 @@ jobs:
           at: ~/
       - run:
           name: Run tests and analyze coverage
-          command: mix do clean, coveralls.circle
+          command: mix coveralls.circle
   dialyzer:
     description: "Runs dialyzer"
     <<: *defaults
@@ -74,16 +74,14 @@ jobs:
       - restore_cache:
           keys:
             - v1.00-logger-humio-backend-plt-cache-{{ checksum "mix.lock" }}
-            - v1.00-logger-humio-backend-plt-cache
-      - run: mix dialyzer --plt
-      - save_cache:
-          key: v1.00-logger-humio-backend-plt-cache-{{ checksum "mix.lock" }}
-          paths:
-            - _build
-            - ~/.mix
       - run:
           name: Run dialyzer
           command: mix dialyzer
+      - save_cache:
+          key: v1.00-logger-humio-backend-plt-cache-{{ checksum "mix.lock" }}
+          paths:
+            - ~/.cache/dialyzer/plts
+          when: always
   dependency-audit:
     description: "Runs dependencies audit"
     <<: *defaults
