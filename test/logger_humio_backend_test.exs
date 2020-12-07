@@ -4,73 +4,27 @@ defmodule Logger.Backend.Humio.Test do
   """
   use ExUnit.Case, async: false
 
-  import Mox
-
-  alias Logger.Backend.Humio.{Client, ConfigHelpers, TestStruct}
+  alias Logger.Backend.Humio.{ConfigHelpers, TestStruct}
 
   require Logger
 
-  @happy_result {:ok, %{status: 200, body: "somebody"}}
-
   ### Setup Functions
   defp batch_test_config(_context) do
-    set_mox_global()
-    parent = self()
-    ref = make_ref()
-
-    expect(Client.Mock, :send, fn state ->
-      send(parent, {ref, state})
-      @happy_result
-    end)
-
     ConfigHelpers.configure(
       max_batch_size: 3,
       flush_interval_ms: 10_000
     )
-
-    {:ok, %{ref: ref}}
   end
 
   defp timeout_test_config(_context) do
-    set_mox_global()
-    flush_interval_ms = 300
-    max_batch_size = 10
-
-    parent = self()
-    ref = make_ref()
-
-    expect(Client.Mock, :send, fn state ->
-      send(parent, {ref, state})
-      @happy_result
-    end)
-
     ConfigHelpers.configure(
-      max_batch_size: max_batch_size,
-      flush_interval_ms: flush_interval_ms
+      max_batch_size: 10,
+      flush_interval_ms: 300
     )
-
-    {:ok, %{flush_interval_ms: flush_interval_ms, max_batch_size: max_batch_size, ref: ref}}
   end
 
   defp timeout_test_two_sends_config(_context) do
-    set_mox_global()
-    flush_interval_ms = 300
-    max_batch_size = 10
-
-    parent = self()
-    ref = make_ref()
-
-    expect(Client.Mock, :send, 2, fn state ->
-      send(parent, {ref, state})
-      @happy_result
-    end)
-
-    ConfigHelpers.configure(
-      max_batch_size: max_batch_size,
-      flush_interval_ms: flush_interval_ms
-    )
-
-    {:ok, %{flush_interval_ms: flush_interval_ms, max_batch_size: max_batch_size, ref: ref}}
+    ConfigHelpers.configure(2, max_batch_size: 10, flush_interval_ms: 300)
   end
 
   ### Tests
@@ -81,46 +35,19 @@ defmodule Logger.Backend.Humio.Test do
     end
 
     test "does not log when level is under minimum Logger level" do
-      set_mox_global()
-      parent = self()
-      ref = make_ref()
-
-      expect(Client.Mock, :send, fn state ->
-        send(parent, {ref, state})
-        @happy_result
-      end)
-
-      ConfigHelpers.configure(min_level: :info)
+      {:ok, %{ref: ref}} = ConfigHelpers.configure(0, min_level: :info)
       Logger.debug("do not log me")
       refute_receive {^ref, %{}}
     end
 
     test "does log when level is above or equal minimum Logger level" do
-      set_mox_global()
-      parent = self()
-      ref = make_ref()
-
-      expect(Client.Mock, :send, fn state ->
-        send(parent, {ref, state})
-        @happy_result
-      end)
-
-      ConfigHelpers.configure(min_level: :info)
+      {:ok, %{ref: ref}} = ConfigHelpers.configure(min_level: :info)
       Logger.warn("you will log me")
       assert_receive {^ref, %{}}
     end
 
     test "can configure format" do
-      set_mox_global()
-      parent = self()
-      ref = make_ref()
-
-      expect(Client.Mock, :send, fn state ->
-        send(parent, {ref, state})
-        @happy_result
-      end)
-
-      ConfigHelpers.configure(format: "I have a $message")
+      {:ok, %{ref: ref}} = ConfigHelpers.configure(format: "I have a $message")
 
       Logger.info("custom format")
       assert_receive {^ref, %{body: body}}
@@ -137,21 +64,10 @@ defmodule Logger.Backend.Humio.Test do
                  ]
                }
              ] = decoded_body
-
-      verify!()
     end
 
     test "can configure metadata and send all sorts of stuff" do
-      set_mox_global()
-      parent = self()
-      ref = make_ref()
-
-      expect(Client.Mock, :send, fn state ->
-        send(parent, {ref, state})
-        @happy_result
-      end)
-
-      ConfigHelpers.configure(metadata: :all)
+      {:ok, %{ref: ref}} = ConfigHelpers.configure(metadata: :all)
 
       Logger.info("hello", user_id: 123, auth: true)
       assert_receive {^ref, %{body: body}}
@@ -186,21 +102,10 @@ defmodule Logger.Backend.Humio.Test do
                "logger_humio_backend/test/logger_humio_backend_test.exs"
 
       assert {:ok, _, _} = DateTime.from_iso8601(timestamp)
-
-      verify!()
     end
 
     test "Various Metadata is encoded correctly as attributes" do
-      set_mox_global()
-      parent = self()
-      ref = make_ref()
-
-      expect(Client.Mock, :send, fn state ->
-        send(parent, {ref, state})
-        @happy_result
-      end)
-
-      ConfigHelpers.configure(metadata: :all)
+      {:ok, %{ref: ref}} = ConfigHelpers.configure(metadata: :all)
       Logger.metadata(atom: :gl)
       Logger.metadata(list: ["item1", "item2"])
       Logger.metadata(integer: 13)
@@ -289,8 +194,6 @@ defmodule Logger.Backend.Humio.Test do
                  ]
                }
              ] = decoded_body
-
-      verify!()
     end
 
     test "flush", %{ref: ref} do
@@ -310,8 +213,6 @@ defmodule Logger.Backend.Humio.Test do
                  ]
                }
              ] = decoded_body
-
-      verify!()
     end
   end
 
@@ -338,8 +239,6 @@ defmodule Logger.Backend.Humio.Test do
                  ]
                }
              ] = decoded_body
-
-      verify!()
     end
 
     test "receive batched messages via timeout", %{
@@ -393,8 +292,6 @@ defmodule Logger.Backend.Humio.Test do
                  ]
                }
              ] = decoded_body
-
-      verify!()
     end
   end
 
@@ -477,8 +374,6 @@ defmodule Logger.Backend.Humio.Test do
                  ]
                }
              ] = Jason.decode!(body)
-
-      verify!()
     end
 
     test "timer is reset after timeout", %{
@@ -525,8 +420,6 @@ defmodule Logger.Backend.Humio.Test do
                  ]
                }
              ] = Jason.decode!(body)
-
-      verify!()
     end
   end
 
@@ -534,23 +427,14 @@ defmodule Logger.Backend.Humio.Test do
     test "API or Client returns non-2xx status causes error log" do
       {:ok, string_io} = StringIO.open("")
       flush_interval_ms = 100
-
-      set_mox_global()
-      parent = self()
-      ref = make_ref()
       error_message = "oh no spaghettio"
       unhappy_result = {:ok, %{status: 500, body: error_message}}
 
-      expect(Client.Mock, :send, fn state ->
-        send(parent, {ref, state})
-        unhappy_result
-      end)
-
-      ConfigHelpers.configure(
-        client: Client.Mock,
-        flush_interval_ms: flush_interval_ms,
-        debug_io_device: string_io
-      )
+      {:ok, %{ref: ref}} =
+        ConfigHelpers.configure(1, unhappy_result,
+          flush_interval_ms: flush_interval_ms,
+          debug_io_device: string_io
+        )
 
       message = "something important that needs to go to Humio"
       Logger.warn(message)
@@ -566,28 +450,20 @@ defmodule Logger.Backend.Humio.Test do
       assert error_output =~ "Status: 500"
       assert error_output =~ message
       assert error_output =~ error_message
-      verify!()
     end
 
     test "API or Client returns :error causing error log" do
       {:ok, string_io} = StringIO.open("")
       flush_interval_ms = 100
 
-      set_mox_global()
-      parent = self()
-      ref = make_ref()
       reason = "oh no spaghettio"
       unhappy_result = {:error, reason}
 
-      expect(Client.Mock, :send, fn state ->
-        send(parent, {ref, state})
-        unhappy_result
-      end)
-
-      ConfigHelpers.configure(
-        flush_interval_ms: flush_interval_ms,
-        debug_io_device: string_io
-      )
+      {:ok, %{ref: ref}} =
+        ConfigHelpers.configure(1, unhappy_result,
+          flush_interval_ms: flush_interval_ms,
+          debug_io_device: string_io
+        )
 
       message = "something important that needs to go to Humio"
       Logger.warn(message)
@@ -602,7 +478,6 @@ defmodule Logger.Backend.Humio.Test do
       assert error_output =~ "Sending logs to Humio failed"
       assert error_output =~ message
       assert error_output =~ reason
-      verify!()
     end
   end
 end
