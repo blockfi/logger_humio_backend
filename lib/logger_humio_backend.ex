@@ -212,14 +212,14 @@ defmodule Logger.Backend.Humio do
     state
   end
 
-  def transmit(
-        %__MODULE__{
-          host: host,
-          token: token,
-          client: client,
-          tags: tags
-        } = state
-      ) do
+  defp transmit(
+         %__MODULE__{
+           host: host,
+           token: token,
+           client: client,
+           tags: tags
+         } = state
+       ) do
     headers = generate_headers(token, @content_type)
 
     to_events(state)
@@ -246,11 +246,11 @@ defmodule Logger.Backend.Humio do
     |> List.wrap()
   end
 
-  def add_tags(map, tags) when tags == %{} do
+  defp add_tags(map, tags) when tags == %{} do
     map
   end
 
-  def add_tags(map, tags) do
+  defp add_tags(map, tags) do
     Map.put_new(map, "tags", tags)
   end
 
@@ -282,17 +282,17 @@ defmodule Logger.Backend.Humio do
     Map.put_new(map, "attributes", attributes)
   end
 
-  def generate_headers(token, content_type) do
+  defp generate_headers(token, content_type) do
     [
       {"Authorization", "Bearer " <> token},
       {"Content-Type", content_type}
     ]
   end
 
-  def format_message(
-        %{message: msg, level: level, timestamp: ts, metadata: md},
-        %__MODULE__{format: format}
-      ) do
+  defp format_message(
+         %{message: msg, level: level, timestamp: ts, metadata: md},
+         %__MODULE__{format: format}
+       ) do
     format
     |> Formatter.format(level, msg, ts, md)
     |> IO.chardata_to_string()
