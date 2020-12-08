@@ -207,7 +207,8 @@ defmodule Logger.Backend.Humio do
     |> compile_format()
   end
 
-  defp compile_format(%__MODULE__{format: format} = state) when is_binary(format) do
+  defp compile_format(%__MODULE__{format: format} = state)
+       when is_binary(format) or is_nil(format) do
     %{state | format: Formatter.compile(format)}
   end
 
