@@ -24,7 +24,8 @@ defmodule Logger.Backend.Humio.ConfigHelpers do
     }
   ]
 
-  @happy_result {:ok, %{status: 200, body: "somebody"}}
+  @happy_result %{status: 200, body: "somebody"}
+  @fake_headers []
 
   @doc """
   Test configuration simplified. Sets up a Logger backend with sensible defaults for testing and a mock client that, by default, expects to be called once and will return a happy path result.
@@ -35,15 +36,32 @@ defmodule Logger.Backend.Humio.ConfigHelpers do
   """
   def configure(times \\ 1, result \\ @happy_result, opts)
 
-  def configure(times, result, opts) when is_integer(times) and is_tuple(result) do
+  def configure(times, %{status: status, body: body}, opts) when is_integer(times) do
     set_mox_global()
 
     parent = self()
     ref = make_ref()
 
     expect(Client.Mock, :send, times, fn state ->
+      # send state to the test
       send(parent, {ref, state})
-      result
+
+      request_ref = make_ref()
+
+      # send result to the logger backend
+      Process.send_after(self(), {:hackney_response, request_ref, {:headers, @fake_headers}}, 100)
+
+      Process.send_after(
+        self(),
+        {:hackney_response, request_ref, {:status, status, "status"}},
+        120
+      )
+
+      Process.send_after(self(), {:hackney_response, request_ref, body}, 140)
+      Process.send_after(self(), {:hackney_response, request_ref, :done}, 160)
+
+      # return reference
+      {:ok, request_ref}
     end)
 
     _ = Logger.add_backend(Humio, flush: true)

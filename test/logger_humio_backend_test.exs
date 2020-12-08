@@ -428,7 +428,7 @@ defmodule Logger.Backend.Humio.Test do
       {:ok, string_io} = StringIO.open("")
       flush_interval_ms = 100
       error_message = "oh no spaghettio"
-      unhappy_result = {:ok, %{status: 500, body: error_message}}
+      unhappy_result = %{status: 500, body: error_message}
 
       {:ok, %{ref: ref}} =
         ConfigHelpers.configure(1, unhappy_result,
@@ -446,38 +446,8 @@ defmodule Logger.Backend.Humio.Test do
       :timer.sleep(500)
       {:ok, {_initial_empty_string, error_output}} = StringIO.close(string_io)
       assert error_output =~ "ERROR"
-      assert error_output =~ "Sending logs to Humio failed."
-      assert error_output =~ "Status: 500"
-      assert error_output =~ message
+      assert error_output =~ "Received unexpected status 500"
       assert error_output =~ error_message
-    end
-
-    test "API or Client returns :error causing error log" do
-      {:ok, string_io} = StringIO.open("")
-      flush_interval_ms = 100
-
-      reason = "oh no spaghettio"
-      unhappy_result = {:error, reason}
-
-      {:ok, %{ref: ref}} =
-        ConfigHelpers.configure(1, unhappy_result,
-          flush_interval_ms: flush_interval_ms,
-          debug_io_device: string_io
-        )
-
-      message = "something important that needs to go to Humio"
-      Logger.warn(message)
-      assert_receive({^ref, %{body: _}}, round(flush_interval_ms * 2))
-
-      # required since unhappy result needs to be returned to backend from ingest API,
-      # which triggers the output to the debug device.
-      # May be improved in future by substituting a mock IO device for StringIO.
-      :timer.sleep(500)
-      {:ok, {_initial_empty_string, error_output}} = StringIO.close(string_io)
-      assert error_output =~ "ERROR"
-      assert error_output =~ "Sending logs to Humio failed"
-      assert error_output =~ message
-      assert error_output =~ reason
     end
   end
 end

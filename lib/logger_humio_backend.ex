@@ -11,15 +11,15 @@ defmodule Logger.Backend.Humio do
   @path "/api/v1/ingest/humio-structured"
   @content_type "application/json"
   @default_config [
-    client: Client.Tesla,
+    client: Client.Hackney,
     host: "",
     token: "",
     level: :debug,
     metadata: [],
     format: nil,
-    max_batch_size: 20,
+    max_batch_size: 500,
     flush_interval_ms: 2_000,
-    debug_io_device: :stdio,
+    debug_io_device: nil,
     fields: %{},
     tags: %{}
   ]
@@ -44,7 +44,7 @@ defmodule Logger.Backend.Humio do
           metadata: keyword() | :all | {:except, keyword()},
           max_batch_size: pos_integer(),
           flush_interval_ms: pos_integer(),
-          debug_io_device: :stdio | :stderr | pid(),
+          debug_io_device: :stdio | :stderr | pid() | nil,
           fields: map(),
           tags: map()
         }
@@ -108,10 +108,67 @@ defmodule Logger.Backend.Humio do
     send_events(state)
   end
 
+  # Hackney Responses
+
   @doc """
-  Unhandled messages are simply ignored.
+  Status code received from Humio for a given request
   """
-  def handle_info(_message, state) do
+  def handle_info(
+        {:hackney_response, ref, {:status, status, _body}},
+        %__MODULE__{debug_io_device: debug_io_device} = state
+      ) do
+    if status != 200 do
+      log(
+        debug_io_device,
+        :error,
+        "Received unexpected status #{inspect(status)}, ref=#{inspect(ref)}"
+      )
+    end
+
+    {:ok, state}
+  end
+
+  @doc """
+  Ignore headers
+  """
+  def handle_info({:hackney_response, _ref, {:headers, _headers}}, state) do
+    {:ok, state}
+  end
+
+  @doc """
+  For now, do nothing when hackney signals it's done with a request
+  """
+  def handle_info({:hackney_response, _ref, :done}, state) do
+    {:ok, state}
+  end
+
+  @doc """
+  When the response is {} then we successfully sent to Humio.
+  """
+  def handle_info({:hackney_response, _ref, "{}"}, state) do
+    {:ok, state}
+  end
+
+  @doc """
+  Body received from Humio for a given request. If this isn't empty, we likely have a problem.
+  """
+  def handle_info(
+        {:hackney_response, ref, response},
+        %__MODULE__{debug_io_device: debug_io_device} = state
+      ) do
+    log(
+      debug_io_device,
+      :error,
+      "Unexpected response for ref=#{inspect(ref)}: #{inspect(response)}"
+    )
+
+    {:ok, state}
+  end
+
+  @doc """
+  Ignore unhandled handle_info calls
+  """
+  def handle_info(_msg, state) do
     {:ok, state}
   end
 
@@ -153,34 +210,20 @@ defmodule Logger.Backend.Humio do
     {:ok, state}
   end
 
-  defp send_events(
-         %__MODULE__{
-           log_events: log_events,
-           debug_io_device: debug_io_device
-         } = state
-       ) do
+  defp send_events(%__MODULE__{debug_io_device: debug_io_device} = state) do
     state
     |> Map.update!(:log_events, &Enum.reverse(&1))
     |> transmit()
     |> case do
-      {:ok, %{status: status, body: body}} when status not in 200..299 ->
-        log(
-          debug_io_device,
-          :error,
-          "Sending logs to Humio failed. Status: #{inspect(status)}, Response Body: #{
-            inspect(body)
-          }, logs: #{inspect(log_events)}"
-        )
+      {:ok, ref} ->
+        log(debug_io_device, :debug, "Sent log buffer, reference: #{inspect(ref)}")
 
       {:error, reason} ->
         log(
           debug_io_device,
           :error,
-          "Sending logs to Humio failed: #{inspect(reason)}, logs: #{inspect(log_events)}"
+          "Sending logs to Humio failed: #{inspect(reason)}"
         )
-
-      {:ok, _response} ->
-        :ok
     end
 
     {:ok, %{cancel_timer(state) | log_events: []}}
