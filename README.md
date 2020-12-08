@@ -2,6 +2,7 @@ LoggerHumioBackend
 =======================
 
 [![Coverage Status](https://coveralls.io/repos/github/blockfi/logger_humio_backend/badge.svg)](https://coveralls.io/github/blockfi/logger_humio_backend)
+[![Hex pm](http://img.shields.io/hexpm/v/logger_humio_backend.svg?style=flat)](https://hex.pm/packages/hackney)
 
 ## About
 
