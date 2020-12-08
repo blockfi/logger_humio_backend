@@ -2,32 +2,16 @@ defmodule Logger.Backend.Humio.PlugTest do
   use ExUnit.Case, async: false
   use Plug.Test
 
-  import Mox
-
-  alias Logger.Backend.Humio.{Client, ConfigHelpers, Plug}
+  alias Logger.Backend.Humio.{ConfigHelpers, Plug}
 
   require Logger
 
-  @happy_result {:ok, %{status: 200, body: "somebody"}}
-
   defp smoke_test_config(_context) do
-    set_mox_global()
-    parent = self()
-    ref = make_ref()
-
-    expect(Client.Mock, :send, fn state ->
-      send(parent, {ref, state})
-      @happy_result
-    end)
-
     ConfigHelpers.configure(
-      client: Client.Mock,
       format: "[$level] $message\n",
       max_batch_size: 1,
       metadata: [:conn]
     )
-
-    {:ok, %{ref: ref}}
   end
 
   describe "Plug" do

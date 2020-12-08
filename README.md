@@ -1,6 +1,8 @@
 LoggerHumioBackend
 =======================
 
+[![Coverage Status](https://coveralls.io/repos/github/blockfi/logger_humio_backend/badge.svg)](https://coveralls.io/github/blockfi/logger_humio_backend)
+
 ## About
 
 A [Elixir Logger](http://elixir-lang.org/docs/v1.0/logger/Logger.html) backend for [Humio](https://www.humio.com/).
@@ -27,7 +29,6 @@ Then run mix deps.get to install it.
 * **format**: `String.t()`. The logging format of the message. [default: `$hostname[$pid]: [$level]$levelpad $message`].
 * **level**: `atom()`. Minimum level for this backend. [default: `:debug`]
 * **metadata**: `list() | :all | {:except, list()}`. Specifies the metadata to be sent to Humio. If a list, sends all the metadata with keys in the list. `:all` sends all metadata. The tuple of `:except` and a list specifies that all metadata except for the keys in the list should be sent. [default: `[]`]
-* **client**: `Logger.Humio.Backend.Client`.  Client used to send messages to Humio.  [default: `Logger.Humio.Backend.Client.Tesla`]
 * **max_batch_size**: `pos_integer()`. Maximum number of logs that the library will batch before sending them to Humio.  [default: `20`]
 * **flush_interval_ms**: `pos_integer()`.  Maximum number of milliseconds that ellapses between flushes to Humio. [default: `2_000`]
 * **debug_io_device**: `pid()`, `:stdio`, or `:stderr`. The IO device to which error messages are sent if sending logs to Humio fails for any reason. [default: `:stdio`]
@@ -39,12 +40,13 @@ Then run mix deps.get to install it.
 #### Runtime
 
 ```elixir
-Logger.add_backend {Logger.Backend.Humio, :debug}
-Logger.configure {Logger.Backend.Humio, :debug},
-  format: "[$level] $message\n"
+Logger.add_backend(Logger.Backend.Humio)
+Logger.configure(Logger.Backend.Humio,
+  format: "[$level] $message\n",
   host: "https://humio-ingest.bigcorp.com:443",
-  level: :debug,
   token: "ingest-token-goes-here",
+  level: :debug
+)
 ```
 
 #### Application config
@@ -54,9 +56,9 @@ Logger.configure {Logger.Backend.Humio, :debug},
 ```elixir
 config :logger,
   utc_log: true #recommended
-  backends: [{Logger.Backend.Humio, :humio_log}, :console]
+  backends: [Logger.Backend.Humio]
 
-config :logger, :humio_log,
+config :logger_humio_backend
   host: "https://humio-ingest.bigcorp.com:443/",
   token: "ingest-token-goes-here",
 ```
@@ -65,9 +67,9 @@ config :logger, :humio_log,
 ```elixir
 config :logger,
   utc_log: true #recommended
-  backends: [{Logger.Backend.Humio, :humio_log}, :console]
+  backends: [Logger.Backend.Humio]
 
-config :logger, :humio_log,
+config :logger_humio_backend,
   host: "https://humio-ingest.bigcorp.com:443/",
   token: "ingest-token-goes-here",
   format: "[$level] $message\n",
@@ -114,7 +116,7 @@ Will print error messages as:
 localhost[<0.349.0>]: [error] Hello
 ```
 
-The valid parameters you can use are: 
+The valid parameters you can use are:
 
 * `$application` - the name of the application from which the log was sent.
 * `$hostname` - the hostname retrieved via `:inet.gethostname/0`.
@@ -155,9 +157,9 @@ For a complete list of fields, [see the Plug.Conn documentation](https://hexdocs
 
 ```
   pipeline :instrumentation do
-    plug Humio.Plug, 
+    plug Humio.Plug,
       [
-        log: :debug, 
+        log: :debug,
         metadata: [:method, :response_time_us, :port, :host]
       ]
   end

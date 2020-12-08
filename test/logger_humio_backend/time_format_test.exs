@@ -4,16 +4,8 @@ defmodule Logger.Backend.Humio.TimeFormatTest do
   alias Logger.Backend.Humio.{LogHelpers, TimeFormat}
 
   test "format timestamp utc" do
-    fun = TimeFormat.iso8601_format_fun(true)
     ts = LogHelpers.timestamp()
-    formatted = fun.(ts)
-    assert {:ok, _, _} = DateTime.from_iso8601(formatted)
-  end
-
-  test "format timestamp to local timezone" do
-    fun = TimeFormat.iso8601_format_fun(false)
-    ts = LogHelpers.timestamp()
-    formatted = fun.(ts)
+    formatted = TimeFormat.iso8601_format_utc(ts)
     assert {:ok, _, _} = DateTime.from_iso8601(formatted)
   end
 end

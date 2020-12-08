@@ -39,15 +39,14 @@ defmodule LoggerHumioBackend.Mixfile do
       {:benchee, "~> 1.0", only: :dev},
       {:credo, "~> 1.5.0-rc.2", only: [:dev, :test], runtime: false},
       {:dialyzex, "~> 1.2.1", only: [:test, :dev]},
-      {:excoveralls, "~> 0.10", only: :test},
+      {:excoveralls, "~> 0.13", only: :test},
       {:ex_doc, "~> 0.22", only: :dev, runtime: false},
       {:iteraptor, "~> 1.12"},
       {:jason, "~> 1.1"},
       {:mix_audit, "~> 0.1", only: [:dev, :test], runtime: false},
       {:mox, "~> 1.0", only: :test},
       {:plug, "~> 1.2"},
-      {:tesla, "~> 1.3.0"},
-      {:timex, "~> 3.5"}
+      {:tesla, "~> 1.3.0"}
     ]
   end
 
