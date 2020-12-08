@@ -245,10 +245,7 @@ defmodule Logger.Backend.Humio do
   defp to_request(%__MODULE__{tags: tags} = state) do
     events = to_events(state)
 
-    Map.new()
-    |> Map.put_new("events", events)
-    |> add_tags(tags)
-    |> List.wrap()
+    [add_tags(%{"events" => events}, tags)]
   end
 
   defp add_tags(map, tags) when tags == %{} do
@@ -256,7 +253,7 @@ defmodule Logger.Backend.Humio do
   end
 
   defp add_tags(map, tags) do
-    Map.put_new(map, "tags", tags)
+    Map.put(map, "tags", tags)
   end
 
   defp to_events(%__MODULE__{log_events: log_events} = state) do
@@ -283,7 +280,7 @@ defmodule Logger.Backend.Humio do
   end
 
   defp add_attributes(map, attributes) do
-    Map.put_new(map, "attributes", attributes)
+    Map.put(map, "attributes", attributes)
   end
 
   defp generate_headers(token, content_type) do
