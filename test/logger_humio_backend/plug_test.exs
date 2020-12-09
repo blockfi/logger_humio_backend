@@ -22,7 +22,7 @@ defmodule Logger.Backend.Humio.PlugTest do
       |> call(metadata: :all)
       |> send_resp(200, "response_body")
 
-      assert_receive {^ref, %{body: body}}
+      assert_receive {^ref, body, _}
 
       decoded_body = Jason.decode!(body)
 
@@ -96,7 +96,7 @@ defmodule Logger.Backend.Humio.PlugTest do
       |> call([])
       |> send_resp(200, "response_body")
 
-      assert_receive {^ref, %{body: body}}
+      assert_receive {^ref, body, _}
 
       decoded_body = Jason.decode!(body)
 
@@ -129,7 +129,7 @@ defmodule Logger.Backend.Humio.PlugTest do
       |> call([])
       |> send_resp(200, "response_body")
 
-      assert_receive {^ref, %{body: body}}
+      assert_receive {^ref, body, _}
 
       decoded_body = Jason.decode!(body)
 

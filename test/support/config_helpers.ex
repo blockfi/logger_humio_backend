@@ -36,15 +36,15 @@ defmodule Logger.Backend.Humio.ConfigHelpers do
   """
   def configure(times \\ 1, result \\ @happy_result, opts)
 
-  def configure(times, %{status: status, body: body}, opts) when is_integer(times) do
+  def configure(times, %{status: status, body: response}, opts) when is_integer(times) do
     set_mox_global()
 
     parent = self()
     ref = make_ref()
 
-    expect(Client.Mock, :send, times, fn state ->
+    expect(Client.Mock, :send_logs, times, fn body, state ->
       # send state to the test
-      send(parent, {ref, state})
+      send(parent, {ref, body, state})
 
       request_ref = make_ref()
 
@@ -57,7 +57,7 @@ defmodule Logger.Backend.Humio.ConfigHelpers do
         120
       )
 
-      Process.send_after(self(), {:hackney_response, request_ref, body}, 140)
+      Process.send_after(self(), {:hackney_response, request_ref, response}, 140)
       Process.send_after(self(), {:hackney_response, request_ref, :done}, 160)
 
       # return reference

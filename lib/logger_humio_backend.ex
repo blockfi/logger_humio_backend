@@ -8,10 +8,8 @@ defmodule Logger.Backend.Humio do
 
   require Logger
 
-  @path "/api/v1/ingest/humio-structured"
-  @content_type "application/json"
   @default_config [
-    client: Client.Hackney,
+    client: Client.Http,
     host: "",
     token: "",
     level: :debug,
@@ -259,26 +257,13 @@ defmodule Logger.Backend.Humio do
     state
   end
 
-  defp transmit(
-         %__MODULE__{
-           host: host,
-           token: token,
-           client: client
-         } = state
-       ) do
-    headers = generate_headers(token, @content_type)
-
+  defp transmit(%__MODULE__{client: client} = state) do
     state
     |> to_request()
     |> Jason.encode()
     |> case do
       {:ok, body} ->
-        client.send(%{
-          base_url: host,
-          path: @path,
-          body: body,
-          headers: headers
-        })
+        client.send_logs(body, state)
 
       {:error, reason} ->
         {:error, reason}
@@ -324,13 +309,6 @@ defmodule Logger.Backend.Humio do
 
   defp add_attributes(map, attributes) do
     Map.put(map, "attributes", attributes)
-  end
-
-  defp generate_headers(token, content_type) do
-    [
-      {"Authorization", "Bearer " <> token},
-      {"Content-Type", content_type}
-    ]
   end
 
   defp format_message(%{message: msg, level: level, timestamp: ts, metadata: md}, format) do

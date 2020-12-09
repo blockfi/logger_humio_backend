@@ -37,20 +37,20 @@ defmodule Logger.Backend.Humio.Test do
     test "does not log when level is under minimum Logger level" do
       {:ok, %{ref: ref}} = ConfigHelpers.configure(0, level: :info)
       Logger.debug("do not log me")
-      refute_receive {^ref, %{}}
+      refute_receive {^ref, _, _}
     end
 
     test "does log when level is above or equal minimum Logger level" do
       {:ok, %{ref: ref}} = ConfigHelpers.configure(level: :info)
       Logger.warn("you will log me")
-      assert_receive {^ref, %{}}
+      assert_receive {^ref, _, _}
     end
 
     test "can configure format" do
       {:ok, %{ref: ref}} = ConfigHelpers.configure(format: "I have a $message")
 
       Logger.info("custom format")
-      assert_receive {^ref, %{body: body}}
+      assert_receive {^ref, body, _}
 
       decoded_body = Jason.decode!(body)
 
@@ -70,7 +70,7 @@ defmodule Logger.Backend.Humio.Test do
       {:ok, %{ref: ref}} = ConfigHelpers.configure(metadata: :all)
 
       Logger.info("hello", user_id: 123, auth: true)
-      assert_receive {^ref, %{body: body}}
+      assert_receive {^ref, body, _}
 
       assert [
                %{
@@ -129,15 +129,7 @@ defmodule Logger.Backend.Humio.Test do
       Logger.metadata(tuple: {:ok, "value"})
       Logger.info("message")
 
-      assert_receive(
-        {^ref,
-         %{
-           body: body,
-           base_url: "host",
-           path: "/api/v1/ingest/humio-structured",
-           headers: [{"Authorization", "Bearer token"}, {"Content-Type", "application/json"}]
-         }}
-      )
+      assert_receive({^ref, body, %Logger.Backend.Humio{host: "host"}})
 
       assert [
                %{
@@ -173,7 +165,7 @@ defmodule Logger.Backend.Humio.Test do
       refute_receive {^ref, %{}}
       Logger.info("message3")
 
-      assert_receive {^ref, %{body: body}}
+      assert_receive {^ref, body, _}
       decoded_body = Jason.decode!(body)
 
       assert [
@@ -200,7 +192,7 @@ defmodule Logger.Backend.Humio.Test do
       Logger.info("message1")
       refute_receive {^ref, %{}}
       Logger.flush()
-      assert_receive {^ref, %{body: body}}
+      assert_receive {^ref, body, _}
       decoded_body = Jason.decode!(body)
 
       assert [
@@ -226,7 +218,7 @@ defmodule Logger.Backend.Humio.Test do
 
       # we multiply by 0.5 so that we assert the :transmit is received between 0.7 to 1.3 the flush interval,
       # which accounts for the 20% jitter.
-      assert_receive {^ref, %{body: body}}, round(flush_interval_ms * 0.5)
+      assert_receive {^ref, body, _}, round(flush_interval_ms * 0.5)
       decoded_body = Jason.decode!(body)
 
       assert [
@@ -250,7 +242,7 @@ defmodule Logger.Backend.Humio.Test do
         Logger.info("message" <> Integer.to_string(n))
       end
 
-      assert_receive {^ref, %{body: body}}, round(flush_interval_ms * 1.2)
+      assert_receive {^ref, body, _}, round(flush_interval_ms * 1.2)
 
       decoded_body = Jason.decode!(body)
 
@@ -308,7 +300,7 @@ defmodule Logger.Backend.Humio.Test do
       end
 
       # received before flush interval reached, since max_batch_size reached
-      assert_receive {^ref, %{body: body}}, round(div(flush_interval_ms, 2))
+      assert_receive {^ref, body, _}, round(div(flush_interval_ms, 2))
 
       assert [
                %{
@@ -360,7 +352,7 @@ defmodule Logger.Backend.Humio.Test do
       Logger.info("timer is reset")
 
       assert_receive(
-        {^ref, %{body: body}},
+        {^ref, body, _},
         round(flush_interval_ms * 1.2)
       )
 
@@ -382,10 +374,7 @@ defmodule Logger.Backend.Humio.Test do
     } do
       Logger.info("message1")
 
-      assert_receive(
-        {^ref, %{body: body}},
-        round(flush_interval_ms * 1.2)
-      )
+      assert_receive {^ref, body, _}, round(flush_interval_ms * 1.2)
 
       assert [
                %{
@@ -402,7 +391,7 @@ defmodule Logger.Backend.Humio.Test do
       Logger.info("message3")
 
       assert_receive(
-        {^ref, %{body: body}},
+        {^ref, body, _},
         round(flush_interval_ms * 1.2)
       )
 
@@ -438,7 +427,7 @@ defmodule Logger.Backend.Humio.Test do
 
       message = "something important that needs to go to Humio"
       Logger.warn(message)
-      assert_receive({^ref, %{}}, round(flush_interval_ms * 2))
+      assert_receive({^ref, _, %Logger.Backend.Humio{}}, round(flush_interval_ms * 2))
 
       # required since unhappy result needs to be returned to backend from ingest API
       # which triggers the output to the debug device.
