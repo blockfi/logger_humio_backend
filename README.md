@@ -1,6 +1,8 @@
 LoggerHumioBackend
 =======================
 
+This project is currently frozen.
+
 [![Coverage Status](https://coveralls.io/repos/github/blockfi/logger_humio_backend/badge.svg)](https://coveralls.io/github/blockfi/logger_humio_backend)
 
 ## About
